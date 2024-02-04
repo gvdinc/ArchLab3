@@ -1,4 +1,5 @@
 import ply.lex as lex
+from ply.lex import TOKEN
 import re
 
 states = (
@@ -10,7 +11,6 @@ tokens = [
     'IDENTIFIER',
     'INTEGER',
     'FLOAT',
-    'BOOLEAN',
     'CHAR',
     'STRING',
     'STR',
@@ -30,6 +30,8 @@ tokens = [
     'MINUS',
     'TIMES',
     'DIVIDE',
+    'INCR',
+    'DECR',
     'MOD',
     'POWER',
     'BITWISE_NOT',
@@ -40,23 +42,19 @@ tokens = [
     'GREATER_THAN',
     'EQUALS',
     'VAR_CEL',
-    'VAR_NAT',
     'VAR_VES',
-    'VAR_SYM'
+    'VAR_SYM',
+    'VAR_STR'
 ]
 
-# определим регулярку для абстрактного идетификатора
+# определим регулярку для абстрактного идентификатора
 ident = r'[a-zA-Zа-яА-Я_]\w*'
 
 # Регулярные выражения для токенов
 t_INTEGER = r'\d+'
 t_FLOAT = r'\d+\.\d+'
-t_BOOLEAN = r'true|false'
 t_string_STR = r'(\\.|[^$"])+'
 t_string_ignore = ''
-t_IF = r'если'
-t_ELSE = r'иначе'
-t_WHILE = r'пока'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_LBRACE = r'\{'
@@ -70,6 +68,8 @@ t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
 t_DIVIDE = r'/'
+t_INCR = r'\+\+'
+t_DECR = r'\-\-'
 t_MOD = r'%'
 t_POWER = r'\^'
 t_BITWISE_NOT = r'~'
@@ -79,6 +79,27 @@ t_LOGICAL_NOT = r'!'
 t_LESS_THAN = r'<'
 t_GREATER_THAN = r'>'
 t_EQUALS = r'=='
+# Токены для переменных
+t_VAR_CEL = r"""цел"""
+t_VAR_VES = r"""вещ"""
+t_VAR_SYM = r"""симв"""
+t_VAR_STR = r"""текст"""
+
+
+# Правила для ключевых слов
+def t_IF(t):
+    r"""если"""
+    return t
+
+
+def t_ELSE(t):
+    r"""иначе"""
+    return t
+
+
+def t_WHILE(t):
+    r"""пока"""
+    return t
 
 
 def t_CHAR(t):
@@ -102,35 +123,6 @@ def t_string_error(t):
     t.lexer.skip(1)
 
 
-# Токены для переменных
-def t_VAR_CEL(t):
-    r"""цел [a-zA-Zа-яА-Я_]\w*"""
-    t.type = 'VAR_CEL'
-    t.value = t.value.split()[1]  # Извлекаем имя переменной
-    return t
-
-
-def t_VAR_NAT(t):
-    r"""нат [a-zA-Zа-яА-Я_]\w*"""
-    t.type = 'VAR_NAT'
-    t.value = t.value.split()[1]  # Извлекаем имя переменной
-    return t
-
-
-def t_VAR_VES(t):
-    r"""вещ [a-zA-Zа-яА-Я_]\w*"""
-    t.type = 'VAR_VES'
-    t.value = t.value.split()[1]  # Извлекаем имя переменной
-    return t
-
-
-def t_VAR_SYM(t):
-    r"""симв [a-zA-Zа-яА-Я_]\w*"""
-    t.type = 'VAR_SYM'
-    t.value = t.value.split()[1]  # Извлекаем имя переменной
-    return t
-
-
 # Игнорируем пробелы и табуляцию
 t_ignore = ' \r\t\f'
 
@@ -140,14 +132,12 @@ def t_IDENTIFIER(t):
     r"""[a-zA-Zа-яА-Я_][a-zA-Z0-9а-яА-Я_]*"""
     if t.value.lower() == 'цел':
         t.type = 'VAR_CEL'
-    elif t.value.lower() == 'нат':
-        t.type = 'VAR_NAT'
     elif t.value.lower() == 'вещ':
         t.type = 'VAR_VES'
-    elif t.value.lower() == 'логик':
-        t.type = 'VAR_LOG'
     elif t.value.lower() == 'симв':
         t.type = 'VAR_SYM'
+    elif t.value.lower() == 'текст':
+        t.type = 'VAR_STR'
     else:
         t.type = 'IDENTIFIER'
     return t
@@ -171,6 +161,9 @@ def t_error(t):
     t.lexer.skip(1)
 
 
+lexer = lex.lex(reflags=re.UNICODE | re.DOTALL)
+
+
 def tokenize(src: str):
     data = ''
     try:
@@ -182,12 +175,13 @@ def tokenize(src: str):
     except Exception as e:
         print("An error occurred: {}".format(e))
         raise
-
-    lexer = lex.lex(reflags=re.UNICODE | re.DOTALL)
-
     lexer.input(data)
     while True:
         tok = lexer.token()  # читаем следующий токен
         if not tok:
             break  # закончились печеньки
         print(tok)
+
+
+if __name__ == '__main__':
+    tokenize("/home/prox/projects/ArchLab3/ArchLab3/src/examples/test.ussr")

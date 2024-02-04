@@ -2,3 +2,5 @@
 .idea
 .cache
 .build
+/src/stalin/parser.out
+/src/stalin/parsetab.py
