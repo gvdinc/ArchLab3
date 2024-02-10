@@ -1,8 +1,7 @@
 import ply.yacc as yacc
-from s_lexer import tokens
 
 # Грамматика
-start = 'program'
+start = "program"
 
 
 def p_program(p):
@@ -33,32 +32,33 @@ def p_assignment(p):
     """assignment : VAR_CEL IDENTIFIER ASSIGN expression SEMICOLON
                   | VAR_VES IDENTIFIER ASSIGN expression SEMICOLON
                   | VAR_SYM IDENTIFIER ASSIGN expression SEMICOLON
-                  | VAR_STR IDENTIFIER ASSIGN expression SEMICOLON"""
-    p[0] = ('assignment', p[1], p[2], p[4])
+                  | VAR_STR IDENTIFIER ASSIGN expression SEMICOLON
+                  | IDENTIFIER ASSIGN expression SEMICOLON"""
+    p[0] = ("assignment", p[1], p[2], p[4])
 
 
 def p_if_statement(p):
     """if_statement : IF LPAREN expression RPAREN LBRACE statements RBRACE
                     | IF LPAREN expression RPAREN LBRACE statements RBRACE ELSE LBRACE statements RBRACE"""
     if len(p) == 8:
-        p[0] = ('if', p[3], p[6])
+        p[0] = ("if", p[3], p[6])
     else:
-        p[0] = ('if-else', p[3], p[6], p[10])
+        p[0] = ("if-else", p[3], p[6], p[10])
 
 
 def p_while_statement(p):
     """while_statement : WHILE LPAREN expression RPAREN LBRACE statements RBRACE"""
-    p[0] = ('while', p[3], p[6])
+    p[0] = ("while", p[3], p[6])
 
 
 def p_read_statement(p):
     """read_statement : READ IDENTIFIER SEMICOLON"""
-    p[0] = ('read', p[2])
+    p[0] = ("read", p[2])
 
 
 def p_write_statement(p):
     """write_statement : WRITE expression SEMICOLON"""
-    p[0] = ('write', p[2])
+    p[0] = ("write", p[2])
 
 
 def p_expression_binary_op(p):
@@ -71,9 +71,11 @@ def p_expression_binary_op(p):
                   | expression BITWISE_NOT expression
                   | expression LOGICAL_AND expression
                   | expression LOGICAL_OR expression
+                  | expression LOGICAL_XOR expression
                   | expression LESS_THAN expression
                   | expression GREATER_THAN expression
-                  | expression EQUALS expression"""
+                  | expression EQUALS expression
+                  | expression NOT_EQUALS expression"""
     p[0] = (p[2], p[1], p[3])
 
 
@@ -81,7 +83,9 @@ def p_expression_unary_op(p):
     """expression : MINUS expression
                   | LOGICAL_NOT expression
                   | INCR expression
-                  | DECR expression"""
+                  | DECR expression
+                  | SQRT expression
+                  | TO_STR expression"""
     p[0] = (p[1], p[2])
 
 
@@ -92,7 +96,7 @@ def p_expression_group(p):
 
 def p_expression_identifier(p):
     """expression : IDENTIFIER"""
-    p[0] = ('identifier', p[1])
+    p[0] = ("identifier", p[1])
 
 
 def p_expression_literal(p):
@@ -100,7 +104,7 @@ def p_expression_literal(p):
                   | FLOAT
                   | CHAR
                   | STR"""
-    p[0] = ('literal', p[1])
+    p[0] = ("literal", p[1])
 
 
 def p_error(p):
@@ -113,7 +117,7 @@ parser = yacc.yacc()
 
 def parse_sovcode(src):
     try:
-        with open(src, mode='r') as file:
+        with open(src) as file:
             data = file.read()
             return parser.parse(data)
     except FileNotFoundError:
@@ -126,6 +130,6 @@ def parse_sovcode(src):
 
 # Пример использования
 if __name__ == "__main__":
-    result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/test.ussr")
+    result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/math.ussr")
     for line in result:
         print(line)

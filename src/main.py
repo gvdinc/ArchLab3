@@ -21,10 +21,10 @@ ussr_ascii = ("\033[91m⠀⠀⠀⠀⠀⠀\033[91m⠀⠀⠀⠀⠀⠀⠀⠀⢀⣆�
 
 
 def main():
-    username = os.getenv('USERNAME') or os.getenv('USER')
+    username = os.getenv("USERNAME") or os.getenv("USER")
     print(f"☭ Симуляция Совкода запущена, товарищ {username}!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(ussr_ascii)
     main()

@@ -2,5 +2,6 @@
 .idea
 .cache
 .build
+.DS_Store
 /src/stalin/parser.out
 /src/stalin/parsetab.py
