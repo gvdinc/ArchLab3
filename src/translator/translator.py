@@ -34,9 +34,9 @@ def classify_liter_type(expression: str):
     int_pattern = "([1-9][0-9]+|0)"
     char_pattern = "."
     str_pattern = ".*"
-    if re.fullmatch(int_pattern, expression):
-        return VarType.FLOAT
     if re.fullmatch(float_pattern, expression):
+        return VarType.INT
+    if re.fullmatch(int_pattern, expression):
         return VarType.INT
     if re.fullmatch(char_pattern, expression):
         return VarType.CHAR
@@ -293,23 +293,23 @@ def simplify_expression(expression: tuple) -> int:
         return expression[0]
     if len(expr_list) == 2:  # Унарные операторы и литералы ('literal', '18')
         return instr_handler_unary(expression)
-    if len(expr_list) == 3:
+    if len(expr_list) == 3:  # Бинарные операции (a + b)
         return instr_handler_binary(expression)
-    if len(expr_list) == 4:
+    if len(expr_list) == 4:  # Тернарные (высшие) операции - (assign, if, not_if, while)
         return instr_handler_ternary(expression)
     pytest.fail(SyntaxError)
 
 
 def translate(ops):
-    res: int
-    for op in ops:
-        if op[0] == ExprType.ASSIGNMENT.value:
+    for op in ops:  # операции верхнего уровня
+        if op[0] == ExprType.ASSIGNMENT.value:  # операция присвоения
             if is_nested(op):
-                res = simplify_expression(op)
+                var_addr: int = simplify_expression(op)
             else:
                 pytest.fail(SyntaxError)
-            print("\n$", res, "--", op)
+            print("\n$", var_addr, "--", op)
             continue
+        # elif op[0] == ExprType.
     # Обработка операции цикла
     # Генерация машинного кода для условного перехода и проверки условия цикла
     # Рекурсивный вызов translate для тела цикла
@@ -336,6 +336,6 @@ def main(sovcode_file: str, binary_out_file: str):
 
 
 if __name__ == "__main__":
-    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr"
+    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/math.ussr"
     bin_file = "/home/prox/projects/ArchLab3/ArchLab3/out/binary"
     main(ussr_file, bin_file)
