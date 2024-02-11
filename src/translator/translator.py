@@ -35,7 +35,7 @@ def classify_liter_type(expression: str):
     char_pattern = "."
     str_pattern = ".*"
     if re.fullmatch(float_pattern, expression):
-        return VarType.INT
+        return VarType.FLOAT
     if re.fullmatch(int_pattern, expression):
         return VarType.INT
     if re.fullmatch(char_pattern, expression):
