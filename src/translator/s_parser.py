@@ -5,6 +5,13 @@ from s_lexer import tokens  # noqa: F401
 start = "program"
 
 
+precedence = (
+    ("nonassoc", "LESS_THAN", "GREATER_THAN", "EQUALS", "NOT_EQUALS"),  # Nonassociative operators
+    ("left", "PLUS", "MINUS"),
+    ("left", "TIMES", "DIVIDE"),
+    ("left", "POWER", "MOD")
+)
+
 def p_program(p):
     """program : statements"""
     p[0] = p[1]
@@ -63,29 +70,28 @@ def p_write_statement(p):
 
 
 def p_expression_binary_op(p):
-    """expression : expression PLUS expression
-                  | expression MINUS expression
-                  | expression TIMES expression
+    """expression : expression TIMES expression
                   | expression DIVIDE expression
                   | expression MOD expression
                   | expression POWER expression
-                  | expression BITWISE_NOT expression
-                  | expression LOGICAL_AND expression
-                  | expression LOGICAL_OR expression
-                  | expression LOGICAL_XOR expression
+                  | expression PLUS expression
+                  | expression MINUS expression
                   | expression LESS_THAN expression
                   | expression GREATER_THAN expression
                   | expression EQUALS expression
-                  | expression NOT_EQUALS expression"""
+                  | expression NOT_EQUALS expression
+                  | expression LOGICAL_AND expression
+                  | expression LOGICAL_OR expression
+                  | expression LOGICAL_XOR expression"""
     p[0] = (p[2], p[1], p[3])
 
 
 def p_expression_unary_op(p):
-    """expression : MINUS expression
+    """expression : SQRT expression
                   | LOGICAL_NOT expression
+                  | MINUS expression
                   | INCR expression
                   | DECR expression
-                  | SQRT expression
                   | TO_STR expression"""
     p[0] = (p[1], p[2])
 
@@ -128,8 +134,9 @@ def parse_sovcode(src):
         print("An error occurred: {}".format(e))
         raise
 
+
 # # Пример использования
-# if __name__ == "__main__":
-#     result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/math.ussr")  # noqa: ERA001
-#     for line in result:
-#         print(line)  # noqa: ERA001
+if __name__ == "__main__":
+    result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr")
+    for line in result:
+        print(line)
