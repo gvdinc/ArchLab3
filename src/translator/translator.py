@@ -1,42 +1,16 @@
 """Транслятор sovcode в машинный код.
 """
 import re
-import struct
 
 import pytest
-import s_lexer as lexer
 import s_parser as parser
-from structures import Cmd, Coder, ExprType, MemStat, VarType
+from structures import Cmd, Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
 
-mem_stat = MemStat()
+mem_stat: MemStat
 coder = Coder()
 
 
-def float_to_binary(float_number):
-    # Преобразовываем число с плавающей запятой в битовое представление по стандарту IEEE 754
-    binary_representation = bin(struct.unpack("!I", struct.pack("!f", float(float_number)))[0])[2:]
-    # Дополнить нулями до 32 бит (для чисел float)
-    return binary_representation.zfill(32)
-
-
-def char_to_utf8(char):
-    # Преобразуем символ в его код UTF-8
-    utf8_bytes = char.encode("utf-8")
-    # Преобразуем байты UTF-8 в строку шестнадцатеричных чисел
-    utf8_hex_string = utf8_bytes.hex()
-    # Преобразуем шестнадцатеричную строку в десятичное число
-    return int(utf8_hex_string, 16)
-
-
-def binary_32_16_split(value: int):
-    # Преобразуем целое число в 32-битное двоичное значение, убирая префикс '0b'
-    binary_value = bin(value & 0xFFFFFFFF)[2:].zfill(32)
-    # Разделим 32-битное двоичное значение на старшую и младшую части по 16 бит
-    upper_half = binary_value[:16]
-    lower_half = binary_value[16:]
-    return int(upper_half, 2), int(lower_half, 2)
-
-
+# classification
 def is_nested(expression):
     # Проверка, является ли текущий элемент кортежем (элементом выражения)
     # Возвращает индекс вложенного элемента, если тот найден
@@ -56,7 +30,7 @@ def is_nested(expression):
 
 
 def classify_liter_type(expression: str):
-    float_pattern = r"([[1-9][0-9]+|0)\.[0-9]+"
+    float_pattern = r"(?:[1-9][0-9]*|0)\.[0-9]+"
     int_pattern = "([1-9][0-9]+|0)"
     char_pattern = "."
     str_pattern = ".*"
@@ -80,26 +54,121 @@ def classify_type(type_str: str):
         return VarType.CHAR
     if type_str == ExprType.VAR_STR.value:
         return VarType.STR
-    pytest.fail(TypeError)
+    pytest.fail(TypeError)  # end classification operations
 
 
-def liter_to_assembly(liter: str, variable_type: VarType):
-    if variable_type == VarType.INT:
-        return int(liter)
-    if variable_type == VarType.FLOAT:
-        binary_representation = float_to_binary(liter)
-        return int(binary_representation, 2)
-    if variable_type == VarType.CHAR:
-        return char_to_utf8(liter)
-    pytest.fail("unknown type expression")
+# unary operations
+def inst_op_decr(addr: int):  # ('--', 911)
+    coder.gen(Cmd.LDM, addr)
+    coder.gen(Cmd.DECR)
+    coder.gen(Cmd.SAVE, addr)
 
 
-def generate_ldm_instruction(self, var: str):
-    # Загрузка переменной в память. Выполняется за 2 такта.
-    addr = mem_stat.get_var(var)
-    coder.gen(Cmd.ADD.value, addr)
+def inst_op_incr(addr: int):  # ('++', 911)
+    coder.gen(Cmd.LDM, addr)
+    coder.gen(Cmd.INCR)
+    coder.gen(Cmd.SAVE, addr)
 
 
+def inst_op_not(addr: int):
+    coder.gen(Cmd.LDM, addr)
+    coder.gen(Cmd.NOT)
+    coder.gen(Cmd.SAVE, addr)
+
+
+def inst_op_uminus(addr: int):
+    coder.gen(Cmd.LSL, 32)  # обнулим аккумулятор
+    coder.gen(Cmd.SUB, addr)  # вычтем положительное знач
+    coder.gen(Cmd.SAVE, addr)  # сохраним
+
+
+def inst_op_sqrt(addr: int):
+    coder.gen(Cmd.LDM, addr)
+    coder.gen(Cmd.SQRT)
+    coder.gen(Cmd.SAVE, addr)  # end unary operations
+
+
+# binary operations
+def inst_op_divide(addr1: int, addr2: int, res_addr: int):  # ('/', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.DIV, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_equals(addr1: int, addr2: int, res_addr: int):  # ('==', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.SUB, addr2)
+    coder.gen(Cmd.NOT)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_greater_than(addr1: int, addr2: int, res_addr: int):  # ('>', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.SUB, addr2)
+    coder.gen(Cmd.DECR)
+    coder.gen(Cmd.CMP)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_less_than(addr1: int, addr2: int, res_addr: int):  # ('<', 12, 15)
+    coder.gen(Cmd.LDM, addr2)
+    coder.gen(Cmd.SUB, addr1)
+    coder.gen(Cmd.DECR)
+    coder.gen(Cmd.CMP)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_and(addr1: int, addr2: int, res_addr: int):  # ('&', 12, 15)
+
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.AND, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_or(addr1: int, addr2: int, res_addr: int):  # ('|', 12, 15)
+
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.OR, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_minus(addr1: int, addr2: int, res_addr: int):  # ('-', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.SUB, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_mod(addr1: int, addr2: int, res_addr: int):  # ('%', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.MOD, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_not_equals(addr1: int, addr2: int, res_addr: int):  # ('!=', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.SUB, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_plus(addr1: int, addr2: int, res_addr: int):  # ('+', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.ADD, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_power(addr1, addr2, res_addr):  # ('**', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.POW, addr2)
+    coder.gen(Cmd.SAVE, res_addr)
+
+
+def inst_op_times(addr1, addr2, res_addr):  # ('*', 12, 15)
+    coder.gen(Cmd.LDM, addr1)
+    coder.gen(Cmd.MULT, addr2)
+    coder.gen(Cmd.SAVE, res_addr)  # end binary operations
+
+
+# memory var/buff operations
 def inst_save_var(expression: tuple) -> int:
     if expression[0] == ExprType.ASSIGNMENT.value:
         var_type: VarType = VarType.INT
@@ -118,7 +187,7 @@ def inst_save_var(expression: tuple) -> int:
             var_addr = mem_stat.allocate_var(var_name, var_type)  # первично инициализируем
         coder.gen(Cmd.LDM, val_addr)  # загружаем значение из буфера в аккумулятор
         coder.gen(Cmd.SAVE, var_addr)  # сохраняем переменную
-        print("saved var", var_name, "= buf", val_addr, "to addr", hex(var_addr), "; expr: ", expression)
+        print("var [", var_name, "= buf", val_addr, "] saved to addr", var_addr, "; expr: ", expression)
         return var_addr
     pytest.fail(SyntaxError)
 
@@ -128,48 +197,85 @@ def inst_save_liter(expression: tuple):
     # Загрузка переменной в память. Выполняется за 2 такта.
     tmp_var_type = classify_liter_type(expression[1])  # определяем тип литера
     tmp_var_val = liter_to_assembly(expression[1], tmp_var_type)  # приводим значение к значению к хранимому
-    tmp_var_addr = mem_stat.allocate_tmp(tmp_var_val, tmp_var_type)  # выбор ячейки хранения
+    tmp_var_addr = mem_stat.allocate_tmp(tmp_var_type, tmp_var_val)  # выбор ячейки хранения
     upper, lower = binary_32_16_split(tmp_var_val)
     coder.gen(Cmd.LDI, upper)
-    coder.gen(Cmd.LSL, 8)
+    coder.gen(Cmd.LSL, 16)  # сдвиг старших бит в старшие разряды
     coder.gen(Cmd.LDI, lower)
     coder.gen(Cmd.SAVE, tmp_var_addr)
-    print("saved tmp val", tmp_var_addr, "=", tmp_var_val, "to buffer addr", hex(tmp_var_addr), "; expr: ", expression)
+    print("tmp [ val", tmp_var_addr, "=", tmp_var_val, "] saved to buffer addr", hex(tmp_var_addr), "; expr: ",
+          expression)
     return tmp_var_addr
 
 
+# handlers
 def instr_handler_unary(expression: tuple):  # noqa: C901
     expr_list = list(expression)
     if expr_list[0] == ExprType.LITERAL.value:  # литерал
         return inst_save_liter(expression)
     if expr_list[0] == ExprType.IDENTIFIER.value:  # переменная
         return mem_stat.get_var(expression[1])  # возвращаем адрес переменной в dmem
-    if expr_list[0] == ExprType.MINUS.value:  # унарный минус
-        return expression[1]
-    if expr_list[0] == ExprType.SQRT.value:
-        instr = coder.gen(Cmd.SQRT, expression[1])
-    if expr_list[0] == ExprType.INCR.value:
-        pass
+    addr = expression[1]
     if expr_list[0] == ExprType.DECR.value:
-        pass
-    if expr_list[0] == ExprType.LOGICAL_NOT.value:
-        pass
-    if expr_list[0] == ExprType.BITWISE_NOT.value:
-        pass
-    if expr_list[0] == ExprType.LOGICAL_XOR.value:
-        pass
-    if expr_list[0] == ExprType.TO_STR.value:
-        pass
-    pytest.fail(SyntaxError)
+        inst_op_decr(addr)
+    elif expr_list[0] == ExprType.INCR.value:
+        inst_op_incr(addr)
+    elif expr_list[0] == ExprType.LOGICAL_NOT.value:
+        inst_op_not(addr)
+    elif expr_list[0] == ExprType.MINUS.value:  # унарный минус
+        inst_op_uminus(addr)
+    elif expr_list[0] == ExprType.SQRT.value:
+        inst_op_sqrt(addr)
+    else:
+        pytest.fail(SyntaxError)
+    return addr
 
 
-def instr_handler_quadro(expression: tuple):
+def instr_handler_binary(expression: tuple):  # noqa: C901
+    expr_list = list(expression)
+    addr1: int = expression[1]
+    addr2: int = expression[2]
+    assert mem_stat.check_vars_type(str(addr1), str(addr2)), TypeError
+    var_type = mem_stat.get_var_type(str(addr1))
+    res_addr: int = mem_stat.allocate_tmp(var_type)
+
+    if expr_list[0] == ExprType.DIVIDE.value:
+        inst_op_divide(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.EQUALS.value:
+        inst_op_equals(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.GREATER_THAN.value:
+        inst_op_greater_than(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.LESS_THAN.value:
+        inst_op_less_than(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.LOGICAL_AND.value:
+        inst_op_and(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.LOGICAL_OR.value:
+        inst_op_and(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.MINUS.value:
+        inst_op_minus(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.MOD.value:
+        inst_op_mod(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.NOT_EQUALS.value:
+        inst_op_not_equals(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.PLUS.value:
+        inst_op_plus(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.POWER.value:
+        inst_op_power(addr1, addr2, res_addr)
+    elif expr_list[0] == ExprType.TIMES.value:
+        inst_op_times(addr1, addr2, res_addr)
+    else:
+        pytest.fail(SyntaxError)
+    return res_addr
+
+
+def instr_handler_ternary(expression: tuple):
     expr_list = list(expression)
     if expr_list[0] == ExprType.ASSIGNMENT.value:  # первичная инициализация
         return inst_save_var(expression)
     pytest.fail(SyntaxError)
 
 
+# simplification operations
 def simplify_expression(expression: tuple) -> int:
     expr_list = list(expression)
     nested_i = is_nested(expression)
@@ -188,9 +294,9 @@ def simplify_expression(expression: tuple) -> int:
     if len(expr_list) == 2:  # Унарные операторы и литералы ('literal', '18')
         return instr_handler_unary(expression)
     if len(expr_list) == 3:
-        pass
+        return instr_handler_binary(expression)
     if len(expr_list) == 4:
-        return instr_handler_quadro(expression)
+        return instr_handler_ternary(expression)
     pytest.fail(SyntaxError)
 
 
@@ -202,7 +308,7 @@ def translate(ops):
                 res = simplify_expression(op)
             else:
                 pytest.fail(SyntaxError)
-            print("$", res, "--", op)
+            print("\n$", res, "--", op)
             continue
     # Обработка операции цикла
     # Генерация машинного кода для условного перехода и проверки условия цикла
@@ -210,33 +316,9 @@ def translate(ops):
     # Другие операции
 
 
-def init_mem_stat(sovcode_file: str):
-    tokens = lexer.tokenize(sovcode_file)
-    for token in tokens:
-        if token.type == "VAR_CEL":
-            mem_stat.variables_count[ExprType.VAR_CEL.value] += 1
-            continue
-        if token.type == "VAR_VES":
-            mem_stat.variables_count[ExprType.VAR_VES.value] += 1
-            continue
-        if token.type == "VAR_SYM":
-            mem_stat.variables_count[ExprType.VAR_SYM.value] += 1
-            continue
-        if token.type == "VAR_STR":
-            mem_stat.variables_count[ExprType.VAR_STR] += 1
-            continue
-    addr_count_sum = (mem_stat.variables_count[ExprType.VAR_CEL.value] * VarType.INT.value +
-                      mem_stat.variables_count[ExprType.VAR_VES.value] * VarType.FLOAT.value +
-                      mem_stat.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.value +
-                      mem_stat.variables_count[ExprType.VAR_STR.value] * VarType.STR.value)
-    mem_stat.buffer_initial = addr_count_sum + 1
-    print("Кол-во переменных: ", mem_stat.variables_count)
-    print("Адресов Занято: ", addr_count_sum, "; Свободно: ", mem_stat.data_addr_total - addr_count_sum,
-          "; Начало буфера: ", hex(mem_stat.buffer_initial), sep="")
-
-
 def main(sovcode_file: str, binary_out_file: str):
-    init_mem_stat(sovcode_file)
+    global mem_stat
+    mem_stat = MemStat(sovcode_file)
     ops_parsed = parser.parse_sovcode(sovcode_file)
     for ops in ops_parsed:
         print(ops)

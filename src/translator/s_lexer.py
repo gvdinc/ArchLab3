@@ -26,7 +26,6 @@ tokens = [
     "ASSIGN",
     "READ",
     "WRITE",
-    "TO_STR",
     "PLUS",
     "MINUS",
     "TIMES",
@@ -68,7 +67,6 @@ t_COMMA = r","  # noqa: N816
 t_ASSIGN = r"="  # noqa: N816
 t_READ = r">>"  # noqa: N816
 t_WRITE = r"<<"  # noqa: N816
-t_TO_STR = r"@"  # noqa: N816
 t_PLUS = r"\+"  # noqa: N816
 t_MINUS = r"-"  # noqa: N816
 t_TIMES = r"\*"  # noqa: N816

@@ -4,13 +4,13 @@ from s_lexer import tokens  # noqa: F401
 # Грамматика
 start = "program"
 
-
 precedence = (
-    ("nonassoc", "LESS_THAN", "GREATER_THAN", "EQUALS", "NOT_EQUALS"),  # Nonassociative operators
+    ("nonassoc", "LESS_THAN", "GREATER_THAN", "EQUALS", "NOT_EQUALS"),  # Non associative operators
     ("left", "PLUS", "MINUS"),
     ("left", "TIMES", "DIVIDE"),
     ("left", "POWER", "MOD")
 )
+
 
 def p_program(p):
     """program : statements"""
@@ -89,10 +89,10 @@ def p_expression_binary_op(p):
 def p_expression_unary_op(p):
     """expression : SQRT expression
                   | LOGICAL_NOT expression
+                  | BITWISE_NOT expression
                   | MINUS expression
                   | INCR expression
-                  | DECR expression
-                  | TO_STR expression"""
+                  | DECR expression"""
     p[0] = (p[1], p[2])
 
 

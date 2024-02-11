@@ -1,5 +1,9 @@
+import struct
 import typing
 from enum import Enum
+
+import pytest
+import s_lexer as lexer
 
 
 class Cmd(Enum):
@@ -20,13 +24,12 @@ class Cmd(Enum):
     AND: str = "and"
     OR: str = "or"
     NOT: str = "not"
-    BTN: str = "btn"
     XOR: str = "xor"
     JMP: str = "jmp"
     JZ: str = "jz"
     JNZ: str = "jnz"
     MULT: str = "mult"
-    DEV: str = "dev"
+    DIV: str = "dev"
     MOD: str = "mod"
     POW: str = "pow"
     SQRT: str = "sqrt"
@@ -62,10 +65,8 @@ class ExprType(Enum):
     INCR: str = "++"
     DECR: str = "--"
     LOGICAL_NOT: str = "!"
-    BITWISE_NOT: str = "~"
     LOGICAL_XOR: str = "^"
-    TO_STR: str = "@"
-    # операции с 2мя аргументами (3ий порядок)
+    # бинарные (2 аргумента)
     PLUS: str = "+"
     TIMES: str = "*"
     DIVIDE: str = "/"
@@ -90,6 +91,43 @@ def to_twos_complement(num: int):
     return flipped_bits.zfill(bit_length).replace("0b", "")
 
 
+# методы конверт
+def float_to_binary(float_number):
+    # Преобразовываем число с плавающей запятой в битовое представление по стандарту IEEE 754
+    binary_representation = bin(struct.unpack("!I", struct.pack("!f", float(float_number)))[0])[2:]
+    # Дополнить нулями до 32 бит (для чисел float)
+    return binary_representation.zfill(32)
+
+
+def char_to_utf8(char):
+    # Преобразуем символ в его код UTF-8
+    utf8_bytes = char.encode("utf-8")
+    # Преобразуем байты UTF-8 в строку шестнадцатеричных чисел
+    utf8_hex_string = utf8_bytes.hex()
+    # Преобразуем шестнадцатеричную строку в десятичное число
+    return int(utf8_hex_string, 16)
+
+
+def binary_32_16_split(value: int):
+    # Преобразуем целое число в 32-битное двоичное значение, убирая префикс '0b'
+    binary_value = bin(value & 0xFFFFFFFF)[2:].zfill(32)
+    # Разделим 32-битное двоичное значение на старшую и младшую части по 16 бит
+    upper_half = binary_value[:16]
+    lower_half = binary_value[16:]
+    return int(upper_half, 2), int(lower_half, 2)
+
+
+def liter_to_assembly(liter: str, variable_type: VarType):
+    if variable_type == VarType.INT:
+        return int(liter)
+    if variable_type == VarType.FLOAT:
+        binary_representation = float_to_binary(liter)
+        return int(binary_representation, 2)
+    if variable_type == VarType.CHAR:
+        return char_to_utf8(liter)
+    pytest.fail("unknown type expression")
+
+
 def is_bounced_16(num: int) -> bool:
     return 0 <= num < 65536
 
@@ -109,16 +147,43 @@ class MemStat:
         ExprType.VAR_STR.value: 0  # 256 ячеек (1060 байт)
     }
 
-    def __init__(self):
+    def __init__(self, sovcode_file: str = ""):
         self._var_iter = 0
         self._vars: typing.ClassVar = {
             # var = [addr, type] type = (int, float, char, str)
+        }
+        self._buffer: typing.ClassVar = {
+            # val = [addr, type] type = (int, float, char, str)
         }
         self.io_ports: typing.ClassVar = {
             "in": 0,
             "out": 1
         }
-        self._buff = 0
+        self._buff_it = 0
+
+        if sovcode_file != "":  # собираем статистику
+            tokens = lexer.tokenize(sovcode_file)
+            for token in tokens:
+                if token.type == "VAR_CEL":
+                    self.variables_count[ExprType.VAR_CEL.value] += 1
+                    continue
+                if token.type == "VAR_VES":
+                    self.variables_count[ExprType.VAR_VES.value] += 1
+                    continue
+                if token.type == "VAR_SYM":
+                    self.variables_count[ExprType.VAR_SYM.value] += 1
+                    continue
+                if token.type == "VAR_STR":
+                    self.variables_count[ExprType.VAR_STR] += 1
+                    continue
+            addr_count_sum = (self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.value +
+                              self.variables_count[ExprType.VAR_VES.value] * VarType.FLOAT.value +
+                              self.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.value +
+                              self.variables_count[ExprType.VAR_STR.value] * VarType.STR.value)
+            self.buffer_initial = addr_count_sum + 1
+            print("Кол-во переменных: ", self.variables_count)
+            print("Адресов Занято: ", addr_count_sum, "; Свободно: ", self.data_addr_total - addr_count_sum,
+                  "; Начало буфера: ", hex(self.buffer_initial), sep="")
 
     def allocate_var(self, var: str, var_type: VarType):
         assert len(var) > 0, "Invalid variable name"
@@ -132,28 +197,43 @@ class MemStat:
             assert KeyError
         return var_iter
 
-    def allocate_tmp(self, value: int, var_type: VarType):
+    def allocate_tmp(self, var_type: VarType, value: int = 0):
         assert is_bounced_32(value), "Invalid argument"
-        assert self._buff + self.buffer_initial + 1 < self.data_addr_total - self.buffer_initial, MemoryError
-        tmp_addr = self._buff + self.buffer_initial
+        assert self._buff_it + self.buffer_initial + 1 < self.data_addr_total - self.buffer_initial, MemoryError
+        tmp_addr = self._buff_it + self.buffer_initial
         tmp_name: str = str(tmp_addr)
-        self._buff += 1
+        self._buff_it += 1
         try:
-            self._vars[tmp_name] = [tmp_addr, var_type]
+            self._buffer[tmp_name] = [tmp_addr, var_type]
         except KeyError:
             assert KeyError
         return tmp_addr
 
     def get_var(self, var: str):
-        assert var in self._vars, "variable not initialized"
-        return self._vars[var][0]
+        assert var in self._vars or var in self._buffer, "variable not initialized"
+        if var in self._vars:
+            return self._vars[var][0]
+        if var in self._buffer:
+            return self._buffer[var][0]
+        pytest.fail(KeyError)
 
     def get_var_type(self, var: str):
-        assert var in self._vars, "variable not initialized"
-        return self._vars[var][1]
+        var = str(var)  # just in case
+        assert var in self._vars or var in self._buffer, "variable not initialized"
+        if var in self._vars:
+            return self._vars[var][1]
+        if var in self._buffer:
+            return self._buffer[var][1]
+        pytest.fail(KeyError)
+
+    def clear_buffer(self):
+        self._buff_it = self.buffer_initial
+        self._buffer = {}
 
     def check_vars_type(self, var1: str, var2: str):
-        if self._vars[var1][1] == self._vars[var2][1]:
+        type1 = self.get_var_type(var1)
+        type2 = self.get_var_type(var2)
+        if type1 == type2:
             return True
         return False
 
@@ -179,27 +259,26 @@ class Coder:
             Cmd.AND: bin(14).zfill(16).replace("0b", ""),  # Логическое и acc
             Cmd.OR: bin(15).zfill(16).replace("0b", ""),  # Логическое или
             Cmd.NOT: bin(16).zfill(16).replace("0b", ""),  # Логическое не acc
-            Cmd.BTN: bin(17).zfill(16).replace("0b", ""),  # Побитовое не acc
-            Cmd.XOR: bin(18).zfill(16).replace("0b", ""),  # Логический xor acc
-            Cmd.JMP: bin(19).zfill(16).replace("0b", ""),  # Совершить переход на pmem
-            Cmd.JZ: bin(20).zfill(16).replace("0b", ""),  # Переход на pmem при установленном zero флаге 1
-            Cmd.JNZ: bin(21).zfill(16).replace("0b", ""),  # Переход на pmem при неустановленном zero флаге
-            Cmd.MULT: bin(22).zfill(16).replace("0b", ""),  # Умножить аккумулятор на знач. Из ячейки пам.
-            Cmd.DEV: bin(23).zfill(16).replace("0b", ""),  # Разделить аккумулятор на знач. Из ячейки пам.
-            Cmd.MOD: bin(24).zfill(16).replace("0b", ""),  # Остаток от деления аккумулятора на знач. Ячейки
-            Cmd.POW: bin(25).zfill(16).replace("0b", ""),  # Возвести аккумулятор в степень из ячейки пам.
-            Cmd.SQRT: bin(26).zfill(16).replace("0b", ""),  # Подсчитать корень знач. Аккумулятора
-            Cmd.IN: bin(27).zfill(16).replace("0b", ""),  # Ввод символьного значения с внешнего устройства
-            Cmd.OUT: bin(28).zfill(16).replace("0b", "")  # Вывод символьного значения на внешнее устройство
+            Cmd.XOR: bin(17).zfill(16).replace("0b", ""),  # Логический xor acc
+            Cmd.JMP: bin(18).zfill(16).replace("0b", ""),  # Совершить переход на pmem
+            Cmd.JZ: bin(19).zfill(16).replace("0b", ""),  # Переход на pmem при установленном zero флаге 1
+            Cmd.JNZ: bin(20).zfill(16).replace("0b", ""),  # Переход на pmem при неустановленном zero флаге
+            Cmd.MULT: bin(21).zfill(16).replace("0b", ""),  # Умножить аккумулятор на знач. Из ячейки пам.
+            Cmd.DIV: bin(22).zfill(16).replace("0b", ""),  # Разделить аккумулятор на знач. Из ячейки пам.
+            Cmd.MOD: bin(23).zfill(16).replace("0b", ""),  # Остаток от деления аккумулятора на знач. Ячейки
+            Cmd.POW: bin(24).zfill(16).replace("0b", ""),  # Возвести аккумулятор в степень из ячейки пам.
+            Cmd.SQRT: bin(25).zfill(16).replace("0b", ""),  # Подсчитать корень знач. Аккумулятора
+            Cmd.IN: bin(26).zfill(16).replace("0b", ""),  # Ввод символьного значения с внешнего устройства
+            Cmd.OUT: bin(27).zfill(16).replace("0b", ""),  # Вывод символьного значения на внешнее устройство
         }
 
-    def gen(self, cmd: Cmd, arg: int):
+    def gen(self, cmd: Cmd, arg: int = 0):
         instruction = ""
         assert is_bounced_16(arg), "Argument out of bounced"
         instruction += self.cmd_codes[cmd]
         instruction += to_twos_complement(arg)
         self.instr_buf.append(instruction)
-        print(instruction, "#", cmd.name, hex(arg))
+        print(instruction, "#", cmd.name, arg)
         return instruction
 
     def get_instr_buf(self):
