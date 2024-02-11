@@ -160,7 +160,7 @@ def t_newline(t):
 
 # Функция для токена комментария
 def t_comment(t):
-    r"""(/\*(.|\n)*?\*/)|(//.*)"""
+    r"""(/\*(.|\n)*?\*/)"""
     pass
 
 
@@ -175,6 +175,7 @@ lexer = lex.lex(reflags=re.UNICODE | re.DOTALL)
 
 def tokenize(src: str):
     data = ""
+    token_buffer = []
     try:
         with open(src) as file:
             data = file.read()
@@ -189,7 +190,8 @@ def tokenize(src: str):
         tok = lexer.token()  # читаем следующий токен
         if not tok:
             break  # закончились печеньки
-        print(tok)
+        token_buffer.append(tok)
+    return token_buffer
 
 
 if __name__ == "__main__":

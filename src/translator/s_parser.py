@@ -1,4 +1,5 @@
 import ply.yacc as yacc
+from s_lexer import tokens  # noqa: F401
 
 # Грамматика
 start = "program"
@@ -127,9 +128,8 @@ def parse_sovcode(src):
         print("An error occurred: {}".format(e))
         raise
 
-
-# Пример использования
-if __name__ == "__main__":
-    result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/math.ussr")
-    for line in result:
-        print(line)
+# # Пример использования
+# if __name__ == "__main__":
+#     result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/math.ussr")  # noqa: ERA001
+#     for line in result:
+#         print(line)  # noqa: ERA001
