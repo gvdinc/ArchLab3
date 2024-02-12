@@ -38,10 +38,15 @@ class Cmd(Enum):
 
 
 class VarType(Enum):
-    INT: int = 1
-    FLOAT: float = 1
-    CHAR: str = 1
-    STR: str = 256
+    INT = 1
+    FLOAT = 2
+    CHAR = 3
+    STR = 4
+
+    def size(self) -> int:
+        if self.value != VarType.STR.value:
+            return 1
+        return 256
 
 
 class ExprType(Enum):
@@ -176,10 +181,10 @@ class MemStat:
                 if token.type == "VAR_STR":
                     self.variables_count[ExprType.VAR_STR] += 1
                     continue
-            addr_count_sum = (self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.value +
-                              self.variables_count[ExprType.VAR_VES.value] * VarType.FLOAT.value +
-                              self.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.value +
-                              self.variables_count[ExprType.VAR_STR.value] * VarType.STR.value)
+            addr_count_sum = (self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.size() +
+                              self.variables_count[ExprType.VAR_VES.value] * VarType.FLOAT.size() +
+                              self.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.size() +
+                              self.variables_count[ExprType.VAR_STR.value] * VarType.STR.size())
             self.buffer_initial = addr_count_sum + 1
             print("Кол-во переменных: ", self.variables_count)
             print("Адресов Занято: ", addr_count_sum, "; Свободно: ", self.data_addr_total - addr_count_sum,
@@ -190,19 +195,18 @@ class MemStat:
         assert (self._var_iter + var_type.value < self.buffer_initial or
                 self._var_iter + var_type.value < self.data_addr_total), "memory access out of bounds"
         var_iter = self._var_iter
-        self._var_iter += var_type.value
+        self._var_iter += var_type.size()
         try:
             self._vars[var] = [var_iter, var_type]
         except KeyError:
             assert KeyError
         return var_iter
 
-    def allocate_tmp(self, var_type: VarType, value: int = 0):
-        assert is_bounced_32(value), "Invalid argument"
+    def allocate_tmp(self, var_type: VarType):
         assert self._buff_it + self.buffer_initial + 1 < self.data_addr_total - self.buffer_initial, MemoryError
         tmp_addr = self._buff_it + self.buffer_initial
         tmp_name: str = str(tmp_addr)
-        self._buff_it += 1
+        self._buff_it += var_type.size()
         try:
             self._buffer[tmp_name] = [tmp_addr, var_type]
         except KeyError:
@@ -220,10 +224,11 @@ class MemStat:
     def get_var_type(self, var: str):
         var = str(var)  # just in case
         assert var in self._vars or var in self._buffer, "variable not initialized"
-        if var in self._vars:
-            return self._vars[var][1]
         if var in self._buffer:
             return self._buffer[var][1]
+        if var in self._vars:
+            self._vars.values()
+            return self._vars[var][1]
         pytest.fail(KeyError)
 
     def clear_buffer(self):
@@ -279,10 +284,29 @@ class Coder:
         instruction += to_twos_complement(arg)
         self.instr_buf.append(instruction)
         print(instruction, "#", cmd.name, arg)
-        return instruction
+        return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
+
+    def change_instruction(self, index: int, cmd: Cmd, arg: int = 0):
+        assert 0 <= index < len(self.instr_buf), IndexError
+        assert is_bounced_16(arg), "Argument out of bounced"
+        if cmd == cmd.HALT:
+            arg = 0  # чтобы можно было посчитать точки выхода на этапе компиляции
+        instruction = self.cmd_codes[cmd] + to_twos_complement(arg)
+        self.instr_buf[index] = instruction
+        print(instruction, "#", cmd.name, arg)
+        return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
 
     def get_instr_buf(self):
         return self.instr_buf
 
+    def get_instr_buf_size(self):
+        return len(self.instr_buf)
+
     def get_binary_code(self) -> list:
         return self.instr_buf
+
+    def check_inst_buf(self):
+        inst_halt = self.cmd_codes[Cmd.HALT] + to_twos_complement(0)
+        if self.instr_buf.count(inst_halt) == 1:
+            return True
+        return False

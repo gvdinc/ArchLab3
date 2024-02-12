@@ -8,7 +8,8 @@ precedence = (
     ("nonassoc", "LESS_THAN", "GREATER_THAN", "EQUALS", "NOT_EQUALS"),  # Non associative operators
     ("left", "PLUS", "MINUS"),
     ("left", "TIMES", "DIVIDE"),
-    ("left", "POWER", "MOD")
+    ("left", "POWER", "MOD"),
+    ("left", "SQRT")
 )
 
 
