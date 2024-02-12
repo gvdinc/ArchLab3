@@ -269,6 +269,8 @@ def instr_handler_binary(expression: tuple):  # noqa: C901
     var_type = mem_stat.get_var_type(str(addr1))
     res_addr: int = mem_stat.allocate_tmp(var_type)
 
+    if expr_list[0] == ExprType.ASSIGNMENT.value:  # присваивание
+        return inst_save_var(expression)
     if expr_list[0] == ExprType.DIVIDE.value:
         inst_op_divide(addr1, addr2, res_addr)
     elif expr_list[0] == ExprType.EQUALS.value:
@@ -322,7 +324,7 @@ def simplify_expression(expression: tuple) -> int:
     # expression выражение не вложено - упрощаем
     assert 1 <= len(expr_list) <= 4, RecursionError  # полностью приведенное выражение до 4 вхождений
     if len(expr_list) == 1:  # адрес ячейки или значение (214)
-        return expression[0]
+        return int(expression[0])
     if len(expr_list) == 2:  # Унарные операторы и литералы ('literal', '18') или ('identifier', 'var_name')
         return instr_handler_unary(expression)
     if len(expr_list) == 3:  # Бинарные операции (a + b)
@@ -332,20 +334,106 @@ def simplify_expression(expression: tuple) -> int:
     pytest.fail(SyntaxError)
 
 
-def translate(ops):
-    for op in ops:  # операции верхнего уровня
-        print("\033[32m{}\033[0m".format(str(op)))
-        if op[0] == ExprType.ASSIGNMENT.value:  # операция присвоения
-            if is_nested(op):
-                var_addr: int = simplify_expression(op)
-            else:
-                pytest.fail(SyntaxError)
-            print("\033[34m", "$", var_addr, "--", "save result", op[2], "\033[0m", "\n")
-            continue
-        # elif op[0] == ExprType.
+# translators
+def translate_assignment(expression: tuple) -> int:
+    if len(expression) == 4:  # операция первичного присвоения
+        if is_nested(expression):
+            var_addr: int = simplify_expression(expression)
+        else:
+            pytest.fail(SyntaxError)
+        print("\033[34m", "$", var_addr, "--", "save result", expression[2], "\033[0m", "\n")
+        return -1
+
+    if len(expression) == 3:  # операция переопределения
+        if is_nested(expression):
+            var_addr: int = simplify_expression(expression)
+        else:
+            pytest.fail(SyntaxError)
+        print("\033[34m", "$", var_addr, "--", "save result", expression[1], "\033[0m", "\n")
+        return -1
+    pytest.fail(SyntaxError)
+
+
+def translate_if_expression(expression: tuple, rec_depth: int) -> int:
+    assert len(expression) == 3, SyntaxError
+    condition: tuple = expression[1]
+    condition_res_addr: int = simplify_expression(condition)
+    coder.gen(Cmd.LDM, condition_res_addr)
+    coder.gen(Cmd.CMP)
+    promise_out_index = coder.gen(Cmd.NOP)  # promised Cmd.JZ promise, потом заменим на jump
+    translate(expression[2][0], rec_depth + 1)  # (do smth)
+    out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
+    coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход (если ложь)
+    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| out", out_index, "\033[0m", "\n", sep="")
+    return -1
+
+
+def translate_if_else_expression(expression: tuple, rec_depth: int) -> int:
+    assert len(expression) == 4, SyntaxError
+    condition: tuple = expression[1]
+    condition_res_addr: int = simplify_expression(condition)
+    coder.gen(Cmd.LDM, condition_res_addr)
+    coder.gen(Cmd.CMP)
+    promise_else_index = coder.gen(Cmd.NOP)  # promised Cmd.JZ promise, потом заменим на jump
+    translate(expression[2][0], rec_depth + 1)  # (do smth1)
+    promise_out_index = coder.gen(Cmd.NOP)  # promised Cmd.JUM promise, потом заменим на jump
+    else_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
+    coder.change_instruction(promise_else_index, Cmd.JZ, else_index)  # выставляем условный переход (на else)
+    translate(expression[3][0], rec_depth + 1)  # (do smth2)
+    out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
+    coder.change_instruction(promise_out_index, Cmd.JMP, out_index)
+    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| else", else_index, " out", out_index, "\033[0m", "\n", sep="")
+    return -1
+
+
+def translate_while_expression(expression: tuple, rec_depth: int) -> int:
+    assert len(expression) == 3, SyntaxError
+
+    condition: tuple = expression[1]
+    condition_index: int = coder.get_instr_buf_size()
+    condition_res_addr: int = simplify_expression(condition)    # начало проверки условия выхода
+    coder.gen(Cmd.LDM, condition_res_addr)
+    coder.gen(Cmd.CMP)                                          # условие проверено, флаги выставлены
+    promise_out_index = coder.gen(Cmd.NOP)                      # promised CMD.JZ out_index
+
+    translate(expression[2][0], rec_depth + 1)  # тело цикла
+    coder.gen(Cmd.JMP, condition_index)                # Cmd.JMP condition_index, переход на условие
+    out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
+    coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
+    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| condition", condition_index, " out", out_index, "\033[0m", "\n", sep="")
+    return -1
+
+
+def translate(op: tuple, rec_depth: int = 0) -> int:
+    print("\033[32m{}\033[0m".format(str(op)))
+    if rec_depth == 0:
+        mem_stat.clear_buffer()
+
+    if op[0] == ExprType.ASSIGNMENT.value:  # операция присвоения
+        assert translate_assignment(op) == -1, SyntaxError
+        return -1
+
+    if op[0] == ExprType.IF.value:  # условие ('if', ('>', (val1), (val2), [(do smth)])
+        assert translate_if_expression(op, rec_depth) == -1, SyntaxError  # построение инструкций ветвления
+        return -1
+
+    if op[0] == ExprType.IF_ELSE.value:  # ('if-else', ('>', (val1), (val2), [(do_smth1))], [(do_smth2)])
+        assert translate_if_else_expression(op, rec_depth) == -1, SyntaxError  # построение инструкций ветвления
+        return -1
+
+    if op[0] == ExprType.WHILE.value:  # ('while', ('<', ('identifier', 'a'), ('literal', '100')), [(do_smth))])
+        assert translate_while_expression(op, rec_depth) == -1, SyntaxError  # построение инструкций ветвления
+        return -1
+
+    # не высший порядок
+    simplify_expression(op)
+    return -1
+    # pytest.fail(SyntaxError)
     # Обработка операции цикла
     # Генерация машинного кода для условного перехода и проверки условия цикла
-    # Рекурсивный вызов translate для тела цикла
     # Другие операции
 
 
@@ -353,11 +441,16 @@ def main(sovcode_file: str, binary_out_file: str):
     global mem_stat
     mem_stat = MemStat(sovcode_file)
     ops_parsed = parser.parse_sovcode(sovcode_file)
-    for ops in ops_parsed:
-        print(ops)
+    for op in ops_parsed:
+        print(op)
     print("")
-    translate(ops_parsed)
+
+    for op in ops_parsed:  # обработаем операции верхнего уровня (if, if_else, while, read, write, assign, identify)
+        # TODO: read and write
+        assert translate(op) < 0, RuntimeError
     coder.gen(Cmd.HALT)  # конец программы
+    print("\033[35m", "Compilation complete!", "\033[0m", sep="")
+
     # Запись сгенерированного машинного кода в файл
     binary_code = coder.get_binary_code()
     print(binary_code)
@@ -370,6 +463,6 @@ def main(sovcode_file: str, binary_out_file: str):
 
 
 if __name__ == "__main__":
-    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/math.ussr"
+    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr"
     bin_file = "/home/prox/projects/ArchLab3/ArchLab3/out/binary"
     main(ussr_file, bin_file)

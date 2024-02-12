@@ -283,17 +283,18 @@ class Coder:
         instruction += self.cmd_codes[cmd]
         instruction += to_twos_complement(arg)
         self.instr_buf.append(instruction)
-        print(instruction, "#", cmd.name, arg)
-        return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
+        index = len(self.instr_buf)-1
+        print(index, instruction, "#", cmd.name, arg)
+        return index  # возвращаем индекс инструкции в буфере
 
     def change_instruction(self, index: int, cmd: Cmd, arg: int = 0):
         assert 0 <= index < len(self.instr_buf), IndexError
         assert is_bounced_16(arg), "Argument out of bounced"
-        if cmd == cmd.HALT:
+        if cmd == cmd.HALT or cmd == cmd.NOP:
             arg = 0  # чтобы можно было посчитать точки выхода на этапе компиляции
         instruction = self.cmd_codes[cmd] + to_twos_complement(arg)
+        print(index, "change instr to", instruction, "#", cmd.name, arg)
         self.instr_buf[index] = instruction
-        print(instruction, "#", cmd.name, arg)
         return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
 
     def get_instr_buf(self):
@@ -306,7 +307,7 @@ class Coder:
         return self.instr_buf
 
     def check_inst_buf(self):
-        inst_halt = self.cmd_codes[Cmd.HALT] + to_twos_complement(0)
-        if self.instr_buf.count(inst_halt) == 1:
+        inst_halt = self.cmd_codes[Cmd.NOP] + to_twos_complement(0)
+        if self.instr_buf.count(inst_halt) == 0:
             return True
         return False

@@ -43,7 +43,10 @@ def p_assignment(p):
                   | VAR_SYM IDENTIFIER ASSIGN expression SEMICOLON
                   | VAR_STR IDENTIFIER ASSIGN expression SEMICOLON
                   | IDENTIFIER ASSIGN expression SEMICOLON"""
-    p[0] = ("assignment", p[1], p[2], p[4])
+    if len(p) == 5:  # reassign
+        p[0] = ("assignment", p[1], p[3])
+    elif len(p) == 6:   # assign new variable
+        p[0] = ("assignment", p[1], p[2], p[4])
 
 
 def p_if_statement(p):
