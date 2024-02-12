@@ -8,6 +8,8 @@ from structures import Cmd, Coder, ExprType, MemStat, VarType, binary_32_16_spli
 
 mem_stat: MemStat
 coder = Coder()
+default_in_port = 0
+default_out_port = 1
 
 
 # classification
@@ -238,6 +240,107 @@ def inst_save_var_to_buffer(var_name: str) -> int:
     return tmp_addr
 
 
+def inst_save_symbol(sym: str, addr: int):
+    assert len(sym) == 1, ValueError
+    code: int = ord(sym)
+    code_lower: int = code % (2 ** 16)
+    code_upper: int = code // (2 ** 16)
+
+    coder.gen(Cmd.LDI, code_upper)
+    coder.gen(Cmd.LSL, 16)  # верхнюю часть в старшие разряды, заодно затерли мусор
+    coder.gen(Cmd.LDI, code_lower)
+    coder.gen(Cmd.SAVE, addr)
+    print("\033[3mop: save sym \'", sym, "\' to addr: ", addr, "\033[0m", sep="")
+
+
+def inst_save_string(expression: tuple) -> int:
+    assert 3 <= len(expression) <= 4, SyntaxError
+    if len(expression) == 4:  # инициализировать ('assignment', 'текст', 'а', ('literal', '☭СССР☭'))
+        assert expression[3][0] == ExprType.LITERAL.value, SyntaxError
+        var_name = expression[2]
+        line: str = expression[3][1]
+        assert isinstance(line, str), SyntaxError
+        length: int = len(line)
+        assert length <= 255, "Line is too big"
+        var_addr: int = mem_stat.allocate_var(var_name, VarType.STR)
+    else:  # переопределить ('assignment', 'а', ('literal', '☭СССР☭'))
+        assert expression[2][0] == ExprType.LITERAL.value, SyntaxError
+        var_name = expression[1]
+        line: str = expression[2][1]
+        assert isinstance(line, str), SyntaxError
+        length: int = len(line)
+        assert length <= 255, "Line is too big"
+        var_addr: int = mem_stat.get_var(var_name)
+
+    coder.gen(Cmd.LSL, 32)  # acc = 0
+    coder.gen(Cmd.LDI, length)  # acc(lower) = line length
+    coder.gen(Cmd.SAVE, var_addr)  # сохраняем первую (служебную) ячейку длины строки
+    print("\033[3mop: save str length to addr", var_addr, "\033[0m")
+    for i in range(1, length + 1):
+        inst_save_symbol(line[i - 1], var_addr + i)
+    print("\033[34m", "$(str)", var_addr, "--", "save result", line, "\033[0m", "\n")
+    return -1
+
+
+# read and write (return -1 if succeeded)
+def inst_read(expression: tuple, port: int = default_in_port):  # ('read', 'a')
+    assert not isinstance(expression[1], tuple), SyntaxError
+    assert 2 <= len(expression) <= 3, SyntaxError
+    var = expression[1]
+    addr = mem_stat.get_var(var) if mem_stat.is_initialized(var) else mem_stat.allocate_var(var, VarType.CHAR)
+    coder.gen(Cmd.IN, port)
+    coder.gen(Cmd.SAVE, addr)
+    print("\033[34m", "op: read from port (", port, ") to var ", var, "(", addr, ")",
+          " instructions complete! \033[0m\n", sep="")
+    return -1
+
+
+def inst_write_line(addr: int, port: int = default_out_port):
+    # подразумевается что уже проверено, что по адресу расположена str переменная (начало)
+    coder.gen(Cmd.LDM, addr)  # длина строки N
+    addr_it = mem_stat.allocate_tmp(VarType.INT)
+    addr_end = mem_stat.allocate_tmp(VarType.INT)
+
+    coder.gen(Cmd.LDI, addr)  # acc = addr начала строки (ячейка хранит размер строки)
+    coder.gen(Cmd.ADD, addr)  # прибавим длину к началу строки
+    coder.gen(Cmd.INCR)  # addr + len + 1 = адрес конца строки (не включительно)
+    coder.gen(Cmd.SAVE, addr_end)  # сохраняем в addr_end
+    coder.gen(Cmd.LSL, 32)  # acc = 0
+    coder.gen(Cmd.SAVE, addr_it)  # addr_it = 0
+    # Цикл - N раз напечатаем символ в N + iter в строку
+    repeat_index = coder.get_instr_buf_size()
+    coder.gen(Cmd.LDM, addr_it)  # acc = addr_it
+    coder.gen(Cmd.INCR)  # acc++
+    coder.gen(Cmd.SAVE, addr_it)  # addr_it += 1
+    coder.gen(Cmd.SUB, addr_end)  # acc = addr_it - addr_end
+    promise_out_index = coder.gen(Cmd.NOP)  # promised JZ out_index
+    coder.gen(Cmd.LDREF, addr_it)  # acc = dmem[dmem[addr_it]] (char)
+    coder.gen(Cmd.OUT, port)  # вывод addr_it(ого) символа строки
+    coder.gen(Cmd.JMP, repeat_index)
+
+    out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
+    coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
+    return -1
+
+
+def inst_write(expression: tuple, port: int = default_out_port):  # ('write', ('identifier', 'а'))
+    assert isinstance(expression[1], tuple), SyntaxError
+    assert 2 <= len(expression) <= 3, SyntaxError
+    var: str = expression[1][1] if expression[1][0] == ExprType.IDENTIFIER.value else ""
+    assert mem_stat.is_initialized(var), MemoryError
+    var_type = mem_stat.get_var_type(var)
+    addr = mem_stat.get_var(var)
+    assert var_type == VarType.CHAR or var_type == VarType.STR, TypeError
+
+    if var_type == VarType.CHAR:  # CHAR
+        coder.gen(Cmd.LDM, addr)
+        coder.gen(Cmd.OUT, port)
+    else:  # STR
+        inst_write_line(addr, port)
+    print("\033[34mop: write var ", var, "(", addr, ") to port (", port, ") instructions complete! \033[0m\n", sep="")
+    return -1
+
+
 # handlers
 def instr_handler_unary(expression: tuple):  # noqa: C901
     expr_list = list(expression)
@@ -393,13 +496,13 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
 
     condition: tuple = expression[1]
     condition_index: int = coder.get_instr_buf_size()
-    condition_res_addr: int = simplify_expression(condition)    # начало проверки условия выхода
+    condition_res_addr: int = simplify_expression(condition)  # начало проверки условия выхода
     coder.gen(Cmd.LDM, condition_res_addr)
-    coder.gen(Cmd.CMP)                                          # условие проверено, флаги выставлены
-    promise_out_index = coder.gen(Cmd.NOP)                      # promised CMD.JZ out_index
+    coder.gen(Cmd.CMP)  # условие проверено, флаги выставлены
+    promise_out_index = coder.gen(Cmd.NOP)  # promised CMD.JZ out_index
 
     translate(expression[2][0], rec_depth + 1)  # тело цикла
-    coder.gen(Cmd.JMP, condition_index)                # Cmd.JMP condition_index, переход на условие
+    coder.gen(Cmd.JMP, condition_index)  # Cmd.JMP condition_index, переход на условие
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
     print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
@@ -407,34 +510,34 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
     return -1
 
 
-def translate(op: tuple, rec_depth: int = 0) -> int:
+def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
     print("\033[32m{}\033[0m".format(str(op)))
     if rec_depth == 0:
         mem_stat.clear_buffer()
 
     if op[0] == ExprType.ASSIGNMENT.value:  # операция присвоения
-        assert translate_assignment(op) == -1, SyntaxError
+        if op[1] != ExprType.VAR_STR.value:
+            assert translate_assignment(op) == -1, SyntaxError
+        else:
+            assert inst_save_string(op) == -1, SyntaxError
         return -1
-
     if op[0] == ExprType.IF.value:  # условие ('if', ('>', (val1), (val2), [(do smth)])
         assert translate_if_expression(op, rec_depth) == -1, SyntaxError  # построение инструкций ветвления
         return -1
-
     if op[0] == ExprType.IF_ELSE.value:  # ('if-else', ('>', (val1), (val2), [(do_smth1))], [(do_smth2)])
         assert translate_if_else_expression(op, rec_depth) == -1, SyntaxError  # построение инструкций ветвления
         return -1
-
     if op[0] == ExprType.WHILE.value:  # ('while', ('<', ('identifier', 'a'), ('literal', '100')), [(do_smth))])
         assert translate_while_expression(op, rec_depth) == -1, SyntaxError  # построение инструкций ветвления
         return -1
-
-    # не высший порядок
-    simplify_expression(op)
+    if op[0] == ExprType.READ.value:  # ('read', 'a')
+        assert inst_read(op) == -1, SyntaxError
+        return -1
+    if op[0] == ExprType.WRITE.value:  # ('write', ('identifier', 'а'))
+        assert inst_write(op) == -1, SyntaxError
+        return -1
+    simplify_expression(op)  # не высший порядок
     return -1
-    # pytest.fail(SyntaxError)
-    # Обработка операции цикла
-    # Генерация машинного кода для условного перехода и проверки условия цикла
-    # Другие операции
 
 
 def main(sovcode_file: str, binary_out_file: str):
@@ -463,6 +566,6 @@ def main(sovcode_file: str, binary_out_file: str):
 
 
 if __name__ == "__main__":
-    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr"
+    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/strings.ussr"
     bin_file = "/home/prox/projects/ArchLab3/ArchLab3/out/binary"
     main(ussr_file, bin_file)

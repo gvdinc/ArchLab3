@@ -35,6 +35,7 @@ class Cmd(Enum):
     SQRT: str = "sqrt"
     IN: str = "in"
     OUT: str = "out"
+    LDREF: str = "ldref"
 
 
 class VarType(Enum):
@@ -130,6 +131,8 @@ def liter_to_assembly(liter: str, variable_type: VarType):
         return int(binary_representation, 2)
     if variable_type == VarType.CHAR:
         return char_to_utf8(liter)
+    if variable_type == VarType.STR:
+        pytest.fail("STR represented as literal")
     pytest.fail("unknown type expression")
 
 
@@ -153,7 +156,8 @@ class MemStat:
     }
 
     def __init__(self, sovcode_file: str = ""):
-        self._var_iter = 0
+        self._var_it = 0
+        self._buff_it = 0
         self._vars: typing.ClassVar = {
             # var = [addr, type] type = (int, float, char, str)
         }
@@ -164,7 +168,6 @@ class MemStat:
             "in": 0,
             "out": 1
         }
-        self._buff_it = 0
 
         if sovcode_file != "":  # собираем статистику
             tokens = lexer.tokenize(sovcode_file)
@@ -179,7 +182,7 @@ class MemStat:
                     self.variables_count[ExprType.VAR_SYM.value] += 1
                     continue
                 if token.type == "VAR_STR":
-                    self.variables_count[ExprType.VAR_STR] += 1
+                    self.variables_count[ExprType.VAR_STR.value] += 1
                     continue
             addr_count_sum = (self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.size() +
                               self.variables_count[ExprType.VAR_VES.value] * VarType.FLOAT.size() +
@@ -188,14 +191,17 @@ class MemStat:
             self.buffer_initial = addr_count_sum + 1
             print("Кол-во переменных: ", self.variables_count)
             print("Адресов Занято: ", addr_count_sum, "; Свободно: ", self.data_addr_total - addr_count_sum,
-                  "; Начало буфера: ", hex(self.buffer_initial), sep="")
+                  "; Начало буфера: ", self.buffer_initial, sep="")
+
+    def is_initialized(self, var: str):
+        return var in self._vars or var in self._buffer
 
     def allocate_var(self, var: str, var_type: VarType):
         assert len(var) > 0, "Invalid variable name"
-        assert (self._var_iter + var_type.value < self.buffer_initial or
-                self._var_iter + var_type.value < self.data_addr_total), "memory access out of bounds"
-        var_iter = self._var_iter
-        self._var_iter += var_type.size()
+        assert (self._var_it + var_type.value < self.buffer_initial or
+                self._var_it + var_type.value < self.data_addr_total), "memory access out of bounds"
+        var_iter = self._var_it
+        self._var_it += var_type.size()
         try:
             self._vars[var] = [var_iter, var_type]
         except KeyError:
@@ -214,7 +220,7 @@ class MemStat:
         return tmp_addr
 
     def get_var(self, var: str):
-        assert var in self._vars or var in self._buffer, "variable not initialized"
+        assert self.is_initialized(var), "variable not initialized"
         if var in self._vars:
             return self._vars[var][0]
         if var in self._buffer:
@@ -223,7 +229,7 @@ class MemStat:
 
     def get_var_type(self, var: str):
         var = str(var)  # just in case
-        assert var in self._vars or var in self._buffer, "variable not initialized"
+        assert self.is_initialized(var), "variable not initialized"
         if var in self._buffer:
             return self._buffer[var][1]
         if var in self._vars:
@@ -275,6 +281,7 @@ class Coder:
             Cmd.SQRT: bin(25).zfill(16).replace("0b", ""),  # Подсчитать корень знач. Аккумулятора
             Cmd.IN: bin(26).zfill(16).replace("0b", ""),  # Ввод символьного значения с внешнего устройства
             Cmd.OUT: bin(27).zfill(16).replace("0b", ""),  # Вывод символьного значения на внешнее устройство
+            Cmd.LDREF: bin(28).zfill(16).replace("0b", ""),  # Загрузить знач dmem[dmem[arg]] в acc
         }
 
     def gen(self, cmd: Cmd, arg: int = 0):
@@ -283,7 +290,7 @@ class Coder:
         instruction += self.cmd_codes[cmd]
         instruction += to_twos_complement(arg)
         self.instr_buf.append(instruction)
-        index = len(self.instr_buf)-1
+        index = len(self.instr_buf) - 1
         print(index, instruction, "#", cmd.name, arg)
         return index  # возвращаем индекс инструкции в буфере
 
