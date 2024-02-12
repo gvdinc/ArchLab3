@@ -1,6 +1,7 @@
 """Транслятор sovcode в машинный код.
 """
 import re
+import sys
 
 import pytest
 import s_parser as parser
@@ -540,7 +541,9 @@ def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
     return -1
 
 
-def main(sovcode_file: str, binary_out_file: str):
+def main():
+    sovcode_file: str = sys.argv[1]
+    binary_out_file: str = sys.argv[2]
     global mem_stat
     mem_stat = MemStat(sovcode_file)
     ops_parsed = parser.parse_sovcode(sovcode_file)
@@ -566,6 +569,4 @@ def main(sovcode_file: str, binary_out_file: str):
 
 
 if __name__ == "__main__":
-    ussr_file = "/home/prox/projects/ArchLab3/ArchLab3/src/examples/strings.ussr"
-    bin_file = "/home/prox/projects/ArchLab3/ArchLab3/out/binary"
-    main(ussr_file, bin_file)
+    main()
