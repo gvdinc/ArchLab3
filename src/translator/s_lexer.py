@@ -10,7 +10,6 @@ states = (
 tokens = [
     "IDENTIFIER",
     "INTEGER",
-    "FLOAT",
     "CHAR",
     "STRING",
     "STR",
@@ -45,7 +44,6 @@ tokens = [
     "EQUALS",
     "NOT_EQUALS",
     "VAR_CEL",
-    "VAR_VES",
     "VAR_SYM",
     "VAR_STR"
 ]
@@ -55,7 +53,6 @@ ident = r"[a-zA-Zа-яА-Я_]\w*"
 
 # Регулярные выражения для токенов
 t_INTEGER = r"\d+"  # noqa: N816
-t_FLOAT = r"\d+\.\d+"  # noqa: N816
 t_string_STR = r'(\\.|[^$"])+'  # noqa: N816
 t_string_ignore = ""
 t_LPAREN = r"\("  # noqa: N816
@@ -87,7 +84,6 @@ t_EQUALS = r"=="  # noqa: N816
 t_NOT_EQUALS = r"\!="  # noqa: N816
 # Токены для переменных
 t_VAR_CEL = r"""цел"""  # noqa: N816
-t_VAR_VES = r"""вещ"""  # noqa: N816
 t_VAR_SYM = r"""симв"""  # noqa: N816
 t_VAR_STR = r"""текст"""  # noqa: N816
 

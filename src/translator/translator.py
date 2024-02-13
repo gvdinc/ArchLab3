@@ -33,12 +33,9 @@ def is_nested(expression):
 
 
 def classify_liter_type(expression: str):
-    float_pattern = r"(?:[1-9][0-9]*|0)\.[0-9]+"
     int_pattern = r"(?:[1-9][0-9]*|0)"
     char_pattern = r"^.$"
     str_pattern = r"^.*$"
-    if re.fullmatch(float_pattern, expression):
-        return VarType.FLOAT
     if re.fullmatch(int_pattern, expression):
         return VarType.INT
     if re.fullmatch(char_pattern, expression):
@@ -51,8 +48,6 @@ def classify_liter_type(expression: str):
 def classify_type(type_str: str):
     if type_str == ExprType.VAR_CEL.value:
         return VarType.INT
-    if type_str == ExprType.VAR_VES.value:
-        return VarType.FLOAT
     if type_str == ExprType.VAR_SYM.value:
         return VarType.CHAR
     if type_str == ExprType.VAR_STR.value:
@@ -283,8 +278,7 @@ def inst_save_string(expression: tuple) -> int:
     return -1
 
 
-# read and write (return -1 if succeeded)
-def inst_read(expression: tuple, port: int = default_in_port):  # ('read', 'a')
+def inst_read(expression: tuple, port: int = default_in_port) -> int:  # ('read', 'a')
     assert not isinstance(expression[1], tuple), SyntaxError
     assert 2 <= len(expression) <= 3, SyntaxError
     var = expression[1]
@@ -315,7 +309,9 @@ def inst_write_line(addr: int, port: int = default_out_port):
     coder.gen(Cmd.SAVE, addr_it)  # addr_it += 1
     coder.gen(Cmd.SUB, addr_end)  # acc = addr_it - addr_end
     promise_out_index = coder.gen(Cmd.NOP)  # promised JZ out_index
-    coder.gen(Cmd.LDREF, addr_it)  # acc = dmem[dmem[addr_it]] (char)
+    coder.gen(Cmd.LDM, addr_it)
+    coder.gen(Cmd.REF)  # reference flag
+    coder.gen(Cmd.LDM, addr)  # acc = dmem[addr + addr_it] (char) referenced
     coder.gen(Cmd.OUT, port)  # вывод addr_it(ого) символа строки
     coder.gen(Cmd.JMP, repeat_index)
 
@@ -506,7 +502,7 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
     coder.gen(Cmd.JMP, condition_index)  # Cmd.JMP condition_index, переход на условие
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
-    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
+    print("\033[34m", "while (depth =", rec_depth, ") instructions complete -- ",
           condition, "| condition", condition_index, " out", out_index, "\033[0m", "\n", sep="")
     return -1
 
@@ -568,5 +564,5 @@ def main():
         f.close()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # TODO: разобраться с долбанным str
     main()

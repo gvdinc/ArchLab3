@@ -35,14 +35,13 @@ class Cmd(Enum):
     SQRT: str = "sqrt"
     IN: str = "in"
     OUT: str = "out"
-    LDREF: str = "ldref"
+    REF: str = "ref"
 
 
 class VarType(Enum):
     INT = 1
-    FLOAT = 2
-    CHAR = 3
-    STR = 4
+    CHAR = 2
+    STR = 3
 
     def size(self) -> int:
         if self.value != VarType.STR.value:
@@ -60,7 +59,6 @@ class ExprType(Enum):
     WRITE: str = "write"
     # типы
     VAR_CEL: str = "цел"
-    VAR_VES: str = "вещ"
     VAR_SYM: str = "симв"
     VAR_STR: str = "текст"
     # унарные
@@ -97,14 +95,7 @@ def to_twos_complement(num: int):
     return flipped_bits.zfill(bit_length).replace("0b", "")
 
 
-# методы конверт
-def float_to_binary(float_number):
-    # Преобразовываем число с плавающей запятой в битовое представление по стандарту IEEE 754
-    binary_representation = bin(struct.unpack("!I", struct.pack("!f", float(float_number)))[0])[2:]
-    # Дополнить нулями до 32 бит (для чисел float)
-    return binary_representation.zfill(32)
-
-
+# методы конвертации
 def char_to_utf8(char):
     # Преобразуем символ в его код UTF-8
     utf8_bytes = char.encode("utf-8")
@@ -126,9 +117,6 @@ def binary_32_16_split(value: int):
 def liter_to_assembly(liter: str, variable_type: VarType):
     if variable_type == VarType.INT:
         return int(liter)
-    if variable_type == VarType.FLOAT:
-        binary_representation = float_to_binary(liter)
-        return int(binary_representation, 2)
     if variable_type == VarType.CHAR:
         return char_to_utf8(liter)
     if variable_type == VarType.STR:
@@ -150,7 +138,6 @@ class MemStat:
     buffer_initial: int  # адрес начала буфера
     variables_count: typing.ClassVar = {
         ExprType.VAR_CEL.value: 0,  # 1 ячейка (4 байта)
-        ExprType.VAR_VES.value: 0,  # 1 ячейка (4 байта)
         ExprType.VAR_SYM.value: 0,  # 1 ячейка (4 байта)
         ExprType.VAR_STR.value: 0  # 256 ячеек (1060 байт)
     }
@@ -159,10 +146,10 @@ class MemStat:
         self._var_it = 0
         self._buff_it = 0
         self._vars: typing.ClassVar = {
-            # var = [addr, type] type = (int, float, char, str)
+            # var = [addr, type] type = (int, char, str)
         }
         self._buffer: typing.ClassVar = {
-            # val = [addr, type] type = (int, float, char, str)
+            # val = [addr, type] type = (int, char, str)
         }
         self.io_ports: typing.ClassVar = {
             "in": 0,
@@ -175,9 +162,6 @@ class MemStat:
                 if token.type == "VAR_CEL":
                     self.variables_count[ExprType.VAR_CEL.value] += 1
                     continue
-                if token.type == "VAR_VES":
-                    self.variables_count[ExprType.VAR_VES.value] += 1
-                    continue
                 if token.type == "VAR_SYM":
                     self.variables_count[ExprType.VAR_SYM.value] += 1
                     continue
@@ -185,7 +169,6 @@ class MemStat:
                     self.variables_count[ExprType.VAR_STR.value] += 1
                     continue
             addr_count_sum = (self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.size() +
-                              self.variables_count[ExprType.VAR_VES.value] * VarType.FLOAT.size() +
                               self.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.size() +
                               self.variables_count[ExprType.VAR_STR.value] * VarType.STR.size())
             self.buffer_initial = addr_count_sum + 1
@@ -281,7 +264,7 @@ class Coder:
             Cmd.SQRT: bin(25).zfill(16).replace("0b", ""),  # Подсчитать корень знач. Аккумулятора
             Cmd.IN: bin(26).zfill(16).replace("0b", ""),  # Ввод символьного значения с внешнего устройства
             Cmd.OUT: bin(27).zfill(16).replace("0b", ""),  # Вывод символьного значения на внешнее устройство
-            Cmd.LDREF: bin(28).zfill(16).replace("0b", ""),  # Загрузить знач dmem[dmem[arg]] в acc
+
         }
 
     def gen(self, cmd: Cmd, arg: int = 0):
@@ -300,7 +283,7 @@ class Coder:
         if cmd == cmd.HALT or cmd == cmd.NOP:
             arg = 0  # чтобы можно было посчитать точки выхода на этапе компиляции
         instruction = self.cmd_codes[cmd] + to_twos_complement(arg)
-        print(index, "change instr to", instruction, "#", cmd.name, arg)
+        print(index, "change instr", index, "to", instruction, "#", cmd.name, arg)
         self.instr_buf[index] = instruction
         return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
 

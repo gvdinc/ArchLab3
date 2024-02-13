@@ -39,7 +39,6 @@ def p_statement(p):
 
 def p_assignment(p):
     """assignment : VAR_CEL IDENTIFIER ASSIGN expression SEMICOLON
-                  | VAR_VES IDENTIFIER ASSIGN expression SEMICOLON
                   | VAR_SYM IDENTIFIER ASSIGN expression SEMICOLON
                   | VAR_STR IDENTIFIER ASSIGN expression SEMICOLON
                   | IDENTIFIER ASSIGN expression SEMICOLON"""
@@ -112,7 +111,6 @@ def p_expression_identifier(p):
 
 def p_expression_literal(p):
     """expression : INTEGER
-                  | FLOAT
                   | CHAR
                   | STR"""
     p[0] = ("literal", p[1])
