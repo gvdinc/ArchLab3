@@ -1,4 +1,3 @@
-import struct
 import typing
 from enum import Enum
 
@@ -27,7 +26,7 @@ class Cmd(Enum):
     XOR: str = "xor"
     JMP: str = "jmp"
     JZ: str = "jz"
-    JNZ: str = "jnz"
+    JZC: str = "jzc"
     MULT: str = "mult"
     DIV: str = "dev"
     MOD: str = "mod"
@@ -35,7 +34,8 @@ class Cmd(Enum):
     SQRT: str = "sqrt"
     IN: str = "in"
     OUT: str = "out"
-    REF: str = "ref"
+    LDREF: str = "ldref"
+    SAVEREF: str = "saveref"
 
 
 class VarType(Enum):
@@ -96,13 +96,8 @@ def to_twos_complement(num: int):
 
 
 # методы конвертации
-def char_to_utf8(char):
-    # Преобразуем символ в его код UTF-8
-    utf8_bytes = char.encode("utf-8")
-    # Преобразуем байты UTF-8 в строку шестнадцатеричных чисел
-    utf8_hex_string = utf8_bytes.hex()
-    # Преобразуем шестнадцатеричную строку в десятичное число
-    return int(utf8_hex_string, 16)
+def sym_to_unicode_code(sym: str) -> int:
+    return ord(sym)
 
 
 def binary_32_16_split(value: int):
@@ -118,7 +113,7 @@ def liter_to_assembly(liter: str, variable_type: VarType):
     if variable_type == VarType.INT:
         return int(liter)
     if variable_type == VarType.CHAR:
-        return char_to_utf8(liter)
+        return sym_to_unicode_code(liter)
     if variable_type == VarType.STR:
         pytest.fail("STR represented as literal")
     pytest.fail("unknown type expression")
@@ -179,7 +174,7 @@ class MemStat:
     def is_initialized(self, var: str):
         return var in self._vars or var in self._buffer
 
-    def allocate_var(self, var: str, var_type: VarType):
+    def allocate_var(self, var: str, var_type: VarType) -> int:
         assert len(var) > 0, "Invalid variable name"
         assert (self._var_it + var_type.value < self.buffer_initial or
                 self._var_it + var_type.value < self.data_addr_total), "memory access out of bounds"
@@ -191,7 +186,7 @@ class MemStat:
             assert KeyError
         return var_iter
 
-    def allocate_tmp(self, var_type: VarType):
+    def allocate_tmp(self, var_type: VarType) -> int:
         assert self._buff_it + self.buffer_initial + 1 < self.data_addr_total - self.buffer_initial, MemoryError
         tmp_addr = self._buff_it + self.buffer_initial
         tmp_name: str = str(tmp_addr)
@@ -202,7 +197,7 @@ class MemStat:
             assert KeyError
         return tmp_addr
 
-    def get_var(self, var: str):
+    def get_var(self, var: str) -> int:
         assert self.is_initialized(var), "variable not initialized"
         if var in self._vars:
             return self._vars[var][0]
@@ -210,7 +205,7 @@ class MemStat:
             return self._buffer[var][0]
         pytest.fail(KeyError)
 
-    def get_var_type(self, var: str):
+    def get_var_type(self, var: str) -> VarType:
         var = str(var)  # just in case
         assert self.is_initialized(var), "variable not initialized"
         if var in self._buffer:
@@ -224,9 +219,9 @@ class MemStat:
         self._buff_it = self.buffer_initial
         self._buffer = {}
 
-    def check_vars_type(self, var1: str, var2: str):
-        type1 = self.get_var_type(var1)
-        type2 = self.get_var_type(var2)
+    def check_vars_type(self, var1: str, var2: str) -> bool:
+        type1: VarType = self.get_var_type(var1)
+        type2: VarType = self.get_var_type(var2)
         if type1 == type2:
             return True
         return False
@@ -256,7 +251,7 @@ class Coder:
             Cmd.XOR: bin(17).zfill(16).replace("0b", ""),  # Логический xor acc
             Cmd.JMP: bin(18).zfill(16).replace("0b", ""),  # Совершить переход на pmem
             Cmd.JZ: bin(19).zfill(16).replace("0b", ""),  # Переход на pmem при установленном zero флаге 1
-            Cmd.JNZ: bin(20).zfill(16).replace("0b", ""),  # Переход на pmem при неустановленном zero флаге
+            Cmd.JZC: bin(20).zfill(16).replace("0b", ""),  # Переход на pmem при неустановленном zero флаге
             Cmd.MULT: bin(21).zfill(16).replace("0b", ""),  # Умножить аккумулятор на знач. Из ячейки пам.
             Cmd.DIV: bin(22).zfill(16).replace("0b", ""),  # Разделить аккумулятор на знач. Из ячейки пам.
             Cmd.MOD: bin(23).zfill(16).replace("0b", ""),  # Остаток от деления аккумулятора на знач. Ячейки
@@ -264,10 +259,11 @@ class Coder:
             Cmd.SQRT: bin(25).zfill(16).replace("0b", ""),  # Подсчитать корень знач. Аккумулятора
             Cmd.IN: bin(26).zfill(16).replace("0b", ""),  # Ввод символьного значения с внешнего устройства
             Cmd.OUT: bin(27).zfill(16).replace("0b", ""),  # Вывод символьного значения на внешнее устройство
-
+            Cmd.LDREF: bin(28).zfill(16).replace("0b", ""),  # Относительная загрузка из памяти
+            Cmd.SAVEREF: bin(29).zfill(16).replace("0b", ""),  # Относительное сохранение в память
         }
 
-    def gen(self, cmd: Cmd, arg: int = 0):
+    def gen(self, cmd: Cmd, arg: int = 0) -> int:
         instruction = ""
         assert is_bounced_16(arg), "Argument out of bounced"
         instruction += self.cmd_codes[cmd]
@@ -277,7 +273,7 @@ class Coder:
         print(index, instruction, "#", cmd.name, arg)
         return index  # возвращаем индекс инструкции в буфере
 
-    def change_instruction(self, index: int, cmd: Cmd, arg: int = 0):
+    def change_instruction(self, index: int, cmd: Cmd, arg: int = 0) -> int:
         assert 0 <= index < len(self.instr_buf), IndexError
         assert is_bounced_16(arg), "Argument out of bounced"
         if cmd == cmd.HALT or cmd == cmd.NOP:
@@ -287,16 +283,16 @@ class Coder:
         self.instr_buf[index] = instruction
         return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
 
-    def get_instr_buf(self):
+    def get_instr_buf(self) -> list:
         return self.instr_buf
 
-    def get_instr_buf_size(self):
+    def get_instr_buf_size(self) -> int:
         return len(self.instr_buf)
 
     def get_binary_code(self) -> list:
         return self.instr_buf
 
-    def check_inst_buf(self):
+    def check_inst_buf(self) -> bool:
         inst_halt = self.cmd_codes[Cmd.NOP] + to_twos_complement(0)
         if self.instr_buf.count(inst_halt) == 0:
             return True

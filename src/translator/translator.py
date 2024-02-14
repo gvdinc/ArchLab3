@@ -231,9 +231,34 @@ def inst_save_var_to_buffer(var_name: str) -> int:
     var_type = mem_stat.get_var_type(var_name)
     tmp_addr = mem_stat.allocate_tmp(var_type)
     coder.gen(Cmd.LDM, var_addr)
-    coder.gen(Cmd.LDI, tmp_addr)
+    coder.gen(Cmd.SAVE, tmp_addr)
     print("op: var", var_addr, " to buffer:", tmp_addr)
     return tmp_addr
+
+
+# IO and str operations
+def inst_add_char_to_str_var(var_addr: int, val_addr: int) -> int:  # записывает символ из val_addr в конец строки var
+    assert mem_stat.get_var_type(str(val_addr)) == VarType.CHAR, TypeError
+    # Проверим, что строка, не полна. Если это так, то увеличим её на 1
+    coder.gen(Cmd.LSL, 32)  # acc = 0, нужно, т.к. ldi задаёт лишь младшие 16 бит
+    coder.gen(Cmd.LDI, 255)  # acc = 255, макс длина строки 255
+    coder.gen(Cmd.SUB, var_addr)  # acc = 255 - длина строки
+    promise_out_index = coder.gen(Cmd.NOP)  # coder.gen(Cmd.JZC, out_addr)
+    coder.gen(Cmd.LDM, var_addr)
+    coder.gen(Cmd.INCR)
+    coder.gen(Cmd.SAVE, var_addr)  # string length += 1
+
+    coder.gen(Cmd.LDI, var_addr)  # Acc обнулять не надо. После прошлой инструкции в старших разрядах 0
+    coder.gen(Cmd.ADD, var_addr)  # Acc = var_addr + len(var)
+    new_symbol_addr_pointer = mem_stat.allocate_tmp(VarType.CHAR)
+    coder.gen(Cmd.SAVE, new_symbol_addr_pointer)
+    coder.gen(Cmd.LDM, val_addr)  # Acc = symbol
+    coder.gen(Cmd.SAVEREF, new_symbol_addr_pointer)  # var[new_symbol_addr_pointer] = sym
+    # не забываем об обещаниях (promise)
+    out_index = coder.get_instr_buf_size()
+    coder.change_instruction(promise_out_index, Cmd.JZC, out_index)
+    print("op: добавлен символ ", val_addr, "в конец строки", var_addr)
+    return -1
 
 
 def inst_save_symbol(sym: str, addr: int):
@@ -297,21 +322,18 @@ def inst_write_line(addr: int, port: int = default_out_port):
     addr_end = mem_stat.allocate_tmp(VarType.INT)
 
     coder.gen(Cmd.LDI, addr)  # acc = addr начала строки (ячейка хранит размер строки)
-    coder.gen(Cmd.ADD, addr)  # прибавим длину к началу строки
-    coder.gen(Cmd.INCR)  # addr + len + 1 = адрес конца строки (не включительно)
+    coder.gen(Cmd.SAVE, addr_it)  # addr_it = addr + 1 (указатель на начало строки - служебная ячейка)
+    coder.gen(Cmd.INCR)  # acc += 1
+    coder.gen(Cmd.ADD, addr)  # addr + len + 1 = адрес конца строки (не включительно)
     coder.gen(Cmd.SAVE, addr_end)  # сохраняем в addr_end
-    coder.gen(Cmd.LSL, 32)  # acc = 0
-    coder.gen(Cmd.SAVE, addr_it)  # addr_it = 0
+    repeat_index = coder.get_instr_buf_size()  # индекс (p_mem адрес) начала цикла
     # Цикл - N раз напечатаем символ в N + iter в строку
-    repeat_index = coder.get_instr_buf_size()
-    coder.gen(Cmd.LDM, addr_it)  # acc = addr_it
+    coder.gen(Cmd.LDM, addr_it)  # acc = addr_it (it-ый символ)
     coder.gen(Cmd.INCR)  # acc++
     coder.gen(Cmd.SAVE, addr_it)  # addr_it += 1
     coder.gen(Cmd.SUB, addr_end)  # acc = addr_it - addr_end
     promise_out_index = coder.gen(Cmd.NOP)  # promised JZ out_index
-    coder.gen(Cmd.LDM, addr_it)
-    coder.gen(Cmd.REF)  # reference flag
-    coder.gen(Cmd.LDM, addr)  # acc = dmem[addr + addr_it] (char) referenced
+    coder.gen(Cmd.LDREF, addr_it)  # acc = dmem[addr + addr_it] (char) reference load
     coder.gen(Cmd.OUT, port)  # вывод addr_it(ого) символа строки
     coder.gen(Cmd.JMP, repeat_index)
 
@@ -327,9 +349,7 @@ def inst_write(expression: tuple, port: int = default_out_port):  # ('write', ('
     assert mem_stat.is_initialized(var), MemoryError
     var_type = mem_stat.get_var_type(var)
     addr = mem_stat.get_var(var)
-    assert var_type == VarType.CHAR or var_type == VarType.STR, TypeError
-
-    if var_type == VarType.CHAR:  # CHAR
+    if var_type == VarType.CHAR or var_type == VarType.INT:
         coder.gen(Cmd.LDM, addr)
         coder.gen(Cmd.OUT, port)
     else:  # STR
@@ -365,7 +385,7 @@ def instr_handler_binary(expression: tuple):  # noqa: C901
     expr_list = list(expression)
     addr1: int = expression[1]
     addr2: int = expression[2]
-    assert mem_stat.check_vars_type(str(addr1), str(addr2)), TypeError
+    assert mem_stat.check_vars_type(str(addr1), str(addr2)), TypeError  # Операция добавления в строку сюда не попадёт
     var_type = mem_stat.get_var_type(str(addr1))
     res_addr: int = mem_stat.allocate_tmp(var_type)
 
@@ -533,6 +553,14 @@ def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
     if op[0] == ExprType.WRITE.value:  # ('write', ('identifier', 'а'))
         assert inst_write(op) == -1, SyntaxError
         return -1
+    if op[0] == ExprType.PLUS.value:  # добавление символа в строку ('+', ('identifier', 'привет'), ('literal', 'Я'))
+        var_name = op[1][1]
+        assert mem_stat.get_var_type(var_name) == VarType.STR, TypeError
+        var_addr: int = mem_stat.get_var(var_name)
+        sym_addr: int = simplify_expression(op[2])  # liter or ident
+        assert mem_stat.get_var_type(str(sym_addr)) == VarType.CHAR, TypeError
+        inst_add_char_to_str_var(var_addr, sym_addr)
+        return -1
     simplify_expression(op)  # не высший порядок
     return -1
 
@@ -548,9 +576,9 @@ def main():
     print("")
 
     for op in ops_parsed:  # обработаем операции верхнего уровня (if, if_else, while, read, write, assign, identify)
-        # TODO: read and write
-        assert translate(op) < 0, RuntimeError
+        assert translate(op) < 0, MemoryError
     coder.gen(Cmd.HALT)  # конец программы
+    assert coder.check_inst_buf(), MemoryError
     print("\033[35m", "Compilation complete!", "\033[0m", sep="")
 
     # Запись сгенерированного машинного кода в файл
@@ -564,5 +592,5 @@ def main():
         f.close()
 
 
-if __name__ == "__main__":  # TODO: разобраться с долбанным str
+if __name__ == "__main__":
     main()
