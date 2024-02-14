@@ -2,3 +2,7 @@
 .idea
 .cache
 .build
+.DS_Store
+/src/translator/parser.out
+/src/translator/parsetab.py
+/out/
