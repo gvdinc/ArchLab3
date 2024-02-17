@@ -60,8 +60,8 @@ def to_twos_complement(num: int):
         # Положительное число
         return bin(num)[2:].zfill(bit_length).replace("0b", "")
     # Отрицательное число
-    positive_value = abs(num)
-    flipped_bits = bin(positive_value ^ (2 ** bit_length - 1))[2:]
+    d_positive_value = abs(num) - 1
+    flipped_bits = bin(d_positive_value ^ (2 ** bit_length - 1))[2:]
     return flipped_bits.zfill(bit_length).replace("0b", "")
 
 
@@ -186,8 +186,9 @@ class MemStat:
         pytest.fail(KeyError)
 
     def clear_buffer(self):
-        self._buff_it = self.buffer_initial
+        self._buff_it = 0
         self._buffer = {}
+        print("\033[33m", "sys op: buffer cleared", "\033[0m")
 
     def check_vars_type(self, var1: str, var2: str) -> bool:
         type1: VarType = self.get_var_type(var1)

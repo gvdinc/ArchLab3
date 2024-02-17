@@ -78,7 +78,8 @@ def inst_op_not(addr: int):
 
 
 def inst_op_uminus(addr: int):
-    coder.gen(Cmd.LSL, 32)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)
     coder.gen(Cmd.SUB, addr)  # вычтем положительное знач
     coder.gen(Cmd.SAVE, addr)  # сохраним
     print("op: ", "-", addr, sep="")
@@ -111,7 +112,6 @@ def inst_op_greater_than(addr1: int, addr2: int, res_addr: int):  # ('>', 12, 15
     coder.gen(Cmd.LDM, addr1)
     coder.gen(Cmd.SUB, addr2)
     coder.gen(Cmd.DECR)
-    coder.gen(Cmd.CMP)
     coder.gen(Cmd.SAVE, res_addr)
     print("op:", addr1, ">", addr2, "save to buffer", res_addr)
 
@@ -119,7 +119,6 @@ def inst_op_greater_than(addr1: int, addr2: int, res_addr: int):  # ('>', 12, 15
 def inst_op_less_than(addr1: int, addr2: int, res_addr: int):  # ('<', 12, 15)
     coder.gen(Cmd.LDM, addr2)
     coder.gen(Cmd.SUB, addr1)
-    coder.gen(Cmd.DECR)
     coder.gen(Cmd.CMP)
     coder.gen(Cmd.SAVE, res_addr)
     print("op:", addr1, "<", addr2, "save to buffer", res_addr)
@@ -240,9 +239,11 @@ def inst_save_var_to_buffer(var_name: str) -> int:
 def inst_add_char_to_str_var(var_addr: int, val_addr: int) -> int:  # записывает символ из val_addr в конец строки var
     assert mem_stat.get_var_type(str(val_addr)) == VarType.CHAR, TypeError
     # Проверим, что строка, не полна. Если это так, то увеличим её на 1
-    coder.gen(Cmd.LSL, 32)  # acc = 0, нужно, т.к. ldi задаёт лишь младшие 16 бит
+    coder.gen(Cmd.LSL)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)  # acc = 0, нужно, т.к. ldi задаёт лишь младшие 16 бит
     coder.gen(Cmd.LDI, 255)  # acc = 255, макс длина строки 255
     coder.gen(Cmd.SUB, var_addr)  # acc = 255 - длина строки
+    coder.gen(Cmd.CMP, var_addr)
     promise_out_index = coder.gen(Cmd.NOP)  # coder.gen(Cmd.JZC, out_addr)
     coder.gen(Cmd.LDM, var_addr)
     coder.gen(Cmd.INCR)
@@ -293,7 +294,8 @@ def inst_save_string(expression: tuple) -> int:
         assert length <= 255, "Line is too big"
         var_addr: int = mem_stat.get_var(var_name)
 
-    coder.gen(Cmd.LSL, 32)  # acc = 0
+    coder.gen(Cmd.LSL)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)
     coder.gen(Cmd.LDI, length)  # acc(lower) = line length
     coder.gen(Cmd.SAVE, var_addr)  # сохраняем первую (служебную) ячейку длины строки
     print("\033[3mop: save str length to addr", var_addr, "\033[0m")
@@ -317,12 +319,13 @@ def inst_read(expression: tuple, port: int = default_in_port) -> int:  # ('read'
 
 def inst_write_line(addr: int, port: int = default_out_port):
     # подразумевается что уже проверено, что по адресу расположена str переменная (начало)
-    coder.gen(Cmd.LDM, addr)  # длина строки N
     addr_it = mem_stat.allocate_tmp(VarType.INT)
     addr_end = mem_stat.allocate_tmp(VarType.INT)
 
+    coder.gen(Cmd.LSL)
+    coder.gen(Cmd.LSL)
     coder.gen(Cmd.LDI, addr)  # acc = addr начала строки (ячейка хранит размер строки)
-    coder.gen(Cmd.SAVE, addr_it)  # addr_it = addr + 1 (указатель на начало строки - служебная ячейка)
+    coder.gen(Cmd.SAVE, addr_it)  # addr_it = addr (default) (указатель на начало строки - служебная ячейка)
     coder.gen(Cmd.INCR)  # acc += 1
     coder.gen(Cmd.ADD, addr)  # addr + len + 1 = адрес конца строки (не включительно)
     coder.gen(Cmd.SAVE, addr_end)  # сохраняем в addr_end
@@ -332,6 +335,7 @@ def inst_write_line(addr: int, port: int = default_out_port):
     coder.gen(Cmd.INCR)  # acc++
     coder.gen(Cmd.SAVE, addr_it)  # addr_it += 1
     coder.gen(Cmd.SUB, addr_end)  # acc = addr_it - addr_end
+    coder.gen(Cmd.CMP)
     promise_out_index = coder.gen(Cmd.NOP)  # promised JZ out_index
     coder.gen(Cmd.LDREF, addr_it)  # acc = dmem[addr + addr_it] (char) reference load
     coder.gen(Cmd.OUT, port)  # вывод addr_it(ого) символа строки
@@ -517,8 +521,8 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
     coder.gen(Cmd.LDM, condition_res_addr)
     coder.gen(Cmd.CMP)  # условие проверено, флаги выставлены
     promise_out_index = coder.gen(Cmd.NOP)  # promised CMD.JZ out_index
-
-    translate(expression[2][0], rec_depth + 1)  # тело цикла
+    for exp in expression[2]:
+        translate(exp, rec_depth + 1)  # тело цикла
     coder.gen(Cmd.JMP, condition_index)  # Cmd.JMP condition_index, переход на условие
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
