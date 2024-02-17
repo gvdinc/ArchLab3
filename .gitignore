@@ -5,6 +5,7 @@
 .DS_Store
 /src/translator/parser.out
 /src/translator/parsetab.py
+/src/tmpdir/*
 /out/
 
 *.log

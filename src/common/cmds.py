@@ -101,3 +101,36 @@ cmd_codes: dict[Cmd, str] = {
     Cmd.LDREF: bin(28).zfill(16).replace("0b", ""),  # Относительная загрузка из памяти
     Cmd.SAVEREF: bin(29).zfill(16).replace("0b", ""),  # Относительное сохранение в память
 }
+
+representation: list[str] = [
+    "nop",  # 0
+    "halt",  # 1
+    "ldm",  # 2
+    "ldi",  # 3
+    "save",  # 4
+    "add",  # 5
+    "sub",  # 6
+    "cmp",  # 7
+    "incr",  # 8
+    "decr",  # 9
+    "lsl",  # 10
+    "lsr",  # 11
+    "clrc",  # 12
+    "clrz",  # 13
+    "and",  # 14
+    "or",  # 15
+    "not",  # 16
+    "xor",  # 17
+    "jmp",  # 18
+    "jz",  # 19
+    "jzc",  # 20
+    "mult",  # 21
+    "dev",  # 22
+    "mod",  # 23
+    "pow",  # 24
+    "sqrt",  # 25
+    "in",  # 26
+    "out",  # 27
+    "ldref",  # 28
+    "saveref"  # 29
+]

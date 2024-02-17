@@ -1,5 +1,5 @@
 import ply.yacc as yacc
-from s_lexer import tokens  # noqa: F401
+from src.translator.s_lexer import tokens  # noqa: F401
 
 # Грамматика
 start = "program"

@@ -4,7 +4,7 @@ import typing
 from enum import Enum
 
 import pytest
-import s_lexer as lexer
+import src.translator.s_lexer as lexer
 from src.common.cmds import Cmd, cmd_codes
 
 

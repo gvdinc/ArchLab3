@@ -1,11 +1,13 @@
 """Транслятор sovcode в машинный код.
 """
+
+
 import re
 import sys
 
 import pytest
-import s_parser as parser
-from structures import Cmd, Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
+import src.translator.s_parser as parser
+from src.translator.structures import Cmd, Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
 
 mem_stat: MemStat
 coder = Coder()
@@ -569,9 +571,7 @@ def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
     return -1
 
 
-def main():
-    sovcode_file: str = sys.argv[1]
-    binary_out_file: str = sys.argv[2]
+def main(sovcode_file: str, binary_out_file: str):
     global mem_stat
     mem_stat = MemStat(sovcode_file)
     ops_parsed = parser.parse_sovcode(sovcode_file)
@@ -597,4 +597,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    code_file: str = sys.argv[1]
+    out_file: str = sys.argv[2]
+    main(code_file, out_file)

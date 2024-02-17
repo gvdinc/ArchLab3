@@ -4,7 +4,7 @@ import logging
 import math
 import sys
 
-from src.common.cmds import Command
+from src.common.cmds import Command, representation
 from src.emulator.fun import hello_ussr
 
 machine_word_size: int = 32
@@ -123,11 +123,9 @@ class DataPass:
 
     def _bounce_res(self, result: int) -> int:
         if result > 2 ** machine_word_size:
-            logging.warning("overflow up")
             self.c = True
             return result % (2 ** machine_word_size)
         if result < -(2 ** machine_word_size):
-            logging.warning("overflow down")
             self.c = True
             return (result + 2 ** machine_word_size) % (2 ** machine_word_size)
         return result
@@ -227,14 +225,14 @@ class ControlUnit:
     def __init__(self, instructions: list[int], data_pass: DataPass):
         self.inst_mem: list[int] = [0] * 2 ** argument_size
         self.pc: int = 0
-        self.data_pass: DataPass = data_pass
+        self.data_path: DataPass = data_pass
         self._tick = 0
         for i in range(len(instructions)):
             self.inst_mem[i] = instructions[i]
         self.signals: Signals = Signals()
 
     def run_dp(self) -> None:
-        self.data_pass.run(self.signals)
+        self.data_path.run(self.signals)
         self.signals.reset()
         self.tick()
 
@@ -268,8 +266,8 @@ class ControlUnit:
             # jump-ы 1 такт
             self.signals.dp_pause()
 
-            if opcode is Command.JMP.value or (opcode is Command.JZ.value and self.data_pass.z) or (
-                    opcode is Command.JZC.value and (self.data_pass.z or self.data_pass.c)):
+            if opcode is Command.JMP.value or (opcode is Command.JZ.value and self.data_path.z) or (
+                    opcode is Command.JZC.value and (self.data_path.z or self.data_path.c)):
                 self.signal_sel_next(False)
             else:
                 self.signal_sel_next(True)
@@ -340,7 +338,24 @@ class ControlUnit:
         self.signal_sel_next(True)  # pc++
 
     def __repr__(self):
-        return "Control unit debug not realized yet"
+        """Вернуть строковое представление состояния процессора."""
+        state_repr = "TICK: {:3} PC: {:3} AR: {:3} RAR: {:3} MEM_OUT: {} ACC: {}".format(
+            self._tick,
+            self.pc,
+            self.data_path.ar,
+            self.data_path.rar,
+            self.data_path.io_ports[out_port],
+            self.data_path.acc,
+        )
+
+        instr: int = self.inst_mem[self.pc]
+        opcode: int
+        arg: int
+        opcode, arg = big_endian_split(instr)
+        instr_repr: str = representation[opcode]
+        instr_repr += str(arg)
+
+        return "{} \t{}".format(state_repr, instr_repr)
 
 
 # Эта функция эмулирует работу процессора
