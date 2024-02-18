@@ -62,6 +62,7 @@
 > ((кол_во > 12) & (a + b == 12))
 
 #### Ограничения и фишки
+
 > Сложение только целых чисел или строки и символа (символ добавится в конец строки)
 > Максимальная длина строки 255 символов (как в Паскале)
 > Строковые переменные можно увеличивать посимвольно и выводить
@@ -355,4 +356,16 @@ pass
 * Z — флаг нуля
 
 ### Сигналы
+
 ![img.png](md_source/signals_table.png)
+
+## Для статистики
+
+| ФИО                        |      <алг>      | <LoC> | <code байт> | <code инстр.> | <инстр.> | <такт.> | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |
+|:---------------------------|:---------------:|:-----:|:-----------:|:-------------:|:--------:|:-------:|:---:|:---:|:----:|:--:|:-----:|:------:|:------:|:----:|:----:|:-----:|:----:|
+| Гребёнкин Вадим Дмитриевич |       cat       |   6   |     100     |      25       |   260    |   260   | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |
+| Гребёнкин Вадим Дмитриевич |      hello      |   2   |     256     |      64       |   160    |   171   | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |
+| Гребёнкин Вадим Дмитриевич | hello_user_name |  12   |     804     |      201      |   610    |   647   | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |
+| Гребёнкин Вадим Дмитриевич |      math       |   9   |     432     |      108      |   108    |   108   | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |
+| Гребёнкин Вадим Дмитриевич |  prob1 (math)   |   9   |     824     |      206      |   206    |   206   | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |
+| Гребёнкин Вадим Дмитриевич | prob1s (simple) |   9   |     336     |      84       |  65160   |  65160  | alg | acc | harv | hw | instr | binary | stream | port | pstr | prob1 | 8bit |

@@ -189,6 +189,6 @@ def tokenize(src: str):
 
 
 if __name__ == "__main__":
-    buf = tokenize("/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr")
+    buf = tokenize("/src/examples/debug.ussr")
     for b in buf:
         print(b)

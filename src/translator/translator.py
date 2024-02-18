@@ -1,16 +1,17 @@
 """Транслятор sovcode в машинный код.
 """
 
-
 import re
 import sys
 
 import pytest
-import src.translator.s_parser as parser
-from src.translator.structures import Cmd, Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
+
+from src.transit.cmds import Cmd
+from src.translator import s_parser as parser
+from src.translator.structures import Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
 
 mem_stat: MemStat
-coder = Coder()
+coder: Coder = Coder()
 default_in_port = 0
 default_out_port = 1
 
@@ -274,7 +275,7 @@ def inst_save_symbol(sym: str, addr: int):
     coder.gen(Cmd.LSL, 16)  # верхнюю часть в старшие разряды, заодно затерли мусор
     coder.gen(Cmd.LDI, code_lower)
     coder.gen(Cmd.SAVE, addr)
-    print("\033[3mop: save sym \'", sym, "\' to addr: ", addr, "\033[0m", sep="")
+    print("op: save sym \'", sym, "\' to addr: ", addr, sep="")
 
 
 def inst_save_string(expression: tuple) -> int:
@@ -300,10 +301,10 @@ def inst_save_string(expression: tuple) -> int:
     coder.gen(Cmd.LSL)
     coder.gen(Cmd.LDI, length)  # acc(lower) = line length
     coder.gen(Cmd.SAVE, var_addr)  # сохраняем первую (служебную) ячейку длины строки
-    print("\033[3mop: save str length to addr", var_addr, "\033[0m")
+    print("op: save str length to addr", var_addr)
     for i in range(1, length + 1):
         inst_save_symbol(line[i - 1], var_addr + i)
-    print("\033[34m", "$(str)", var_addr, "--", "save result", line, "\033[0m", "\n")
+    print("$(str)", var_addr, "--", "save result", line, "\n")
     return -1
 
 
@@ -314,8 +315,8 @@ def inst_read(expression: tuple, port: int = default_in_port) -> int:  # ('read'
     addr = mem_stat.get_var(var) if mem_stat.is_initialized(var) else mem_stat.allocate_var(var, VarType.CHAR)
     coder.gen(Cmd.IN, port)
     coder.gen(Cmd.SAVE, addr)
-    print("\033[34m", "op: read from port (", port, ") to var ", var, "(", addr, ")",
-          " instructions complete! \033[0m\n", sep="")
+    print("op: read from port (", port, ") to var ", var, "(", addr, ")",
+          " instructions complete!\n", sep="")
     return -1
 
 
@@ -360,7 +361,7 @@ def inst_write(expression: tuple, port: int = default_out_port):  # ('write', ('
         coder.gen(Cmd.OUT, port)
     else:  # STR
         inst_write_line(addr, port)
-    print("\033[34mop: write var ", var, "(", addr, ") to port (", port, ") instructions complete! \033[0m\n", sep="")
+    print("op: write var ", var, "(", addr, ") to port (", port, ") instructions complete!\n", sep="")
     return -1
 
 
@@ -467,7 +468,7 @@ def translate_assignment(expression: tuple) -> int:
             var_addr: int = simplify_expression(expression)
         else:
             pytest.fail(SyntaxError)
-        print("\033[34m", "$", var_addr, "--", "save result", expression[2], "\033[0m", "\n")
+        print("$", var_addr, "--", "save result", expression[2], "\n")
         return -1
 
     if len(expression) == 3:  # операция переопределения
@@ -475,7 +476,7 @@ def translate_assignment(expression: tuple) -> int:
             var_addr: int = simplify_expression(expression)
         else:
             pytest.fail(SyntaxError)
-        print("\033[34m", "$", var_addr, "--", "save result", expression[1], "\033[0m", "\n")
+        print("$", var_addr, "--", "save result", expression[1], "\n")
         return -1
     pytest.fail(SyntaxError)
 
@@ -490,8 +491,8 @@ def translate_if_expression(expression: tuple, rec_depth: int) -> int:
     translate(expression[2][0], rec_depth + 1)  # (do smth)
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход (если ложь)
-    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| out", out_index, "\033[0m", "\n", sep="")
+    print("if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| out", out_index, "\n", sep="")
     return -1
 
 
@@ -509,8 +510,8 @@ def translate_if_else_expression(expression: tuple, rec_depth: int) -> int:
     translate(expression[3][0], rec_depth + 1)  # (do smth2)
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JMP, out_index)
-    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| else", else_index, " out", out_index, "\033[0m", "\n", sep="")
+    print("if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| else", else_index, " out", out_index, "\n", sep="")
     return -1
 
 
@@ -528,13 +529,13 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
     coder.gen(Cmd.JMP, condition_index)  # Cmd.JMP condition_index, переход на условие
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
-    print("\033[34m", "while (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| condition", condition_index, " out", out_index, "\033[0m", "\n", sep="")
+    print("while (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| condition", condition_index, " out", out_index, "\n", sep="")
     return -1
 
 
 def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
-    print("\033[32m{}\033[0m".format(str(op)))
+    print(str(op))
     if rec_depth == 0:
         mem_stat.clear_buffer()
 
@@ -571,32 +572,41 @@ def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
     return -1
 
 
-def main(sovcode_file: str, binary_out_file: str):
+def main(sovcode_file: str, binary_out_file: str, code_description: str):
     global mem_stat
+    global coder
+    global default_in_port
+    global default_out_port
     mem_stat = MemStat(sovcode_file)
+    coder = Coder()
+    default_in_port = 0
+    default_out_port = 1
+
     ops_parsed = parser.parse_sovcode(sovcode_file)
-    for op in ops_parsed:
-        print(op)
-    print("")
 
     for op in ops_parsed:  # обработаем операции верхнего уровня (if, if_else, while, read, write, assign, identify)
         assert translate(op) < 0, MemoryError
     coder.gen(Cmd.HALT)  # конец программы
     assert coder.check_inst_buf(), MemoryError
-    print("\033[35m", "Compilation complete!", "\033[0m", sep="")
+    print("Compilation complete!", sep="")
 
     # Запись сгенерированного машинного кода в файл
     binary_code = coder.get_binary_code()
-    print(binary_code)
     with open(binary_out_file, "wb") as f:
         for instruction in binary_code:
             instr_int = int(instruction, 2)
             f.write(instr_int.to_bytes(4, "big"))  # Примерный формат записи машинного кода
         f.flush()
         f.close()
+    with open(code_description, "w") as file:
+        description: str = coder.get_log()
+        file.write(description)
+        file.flush()
+        f.close()
 
 
 if __name__ == "__main__":
     code_file: str = sys.argv[1]
     out_file: str = sys.argv[2]
-    main(code_file, out_file)
+    code_description_file: str = sys.argv[3]
+    main(code_file, out_file, code_description_file)

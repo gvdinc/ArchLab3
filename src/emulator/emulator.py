@@ -4,8 +4,8 @@ import logging
 import math
 import sys
 
-from src.common.cmds import Command, representation
 from src.emulator.fun import hello_ussr
+from src.transit.cmds import Command, representation
 
 machine_word_size: int = 32
 argument_size: int = 16
@@ -406,8 +406,23 @@ def read_instructions(binary_file: str) -> list[int]:
 
 
 def main(binary_file: str, inputs_file: str):
+    global machine_word_size
+    global argument_size
+    global port_number
+    global in_port
+    global out_port
+    global instr_limit
+    global int_output
+
+    machine_word_size = 32
+    argument_size = 16
+    port_number = 8
+    in_port = 0
+    out_port = 1
+    instr_limit = 100000
+    int_output = True
+
     hello_ussr()
-    print("Исполняемый файл:", binary_file)
     code: list[int] = read_instructions(binary_file)
     with open(inputs_file, encoding="utf-8") as file:
         input_text = file.read()
@@ -428,7 +443,7 @@ if __name__ == "__main__":
     logging_lvl: int = logging.DEBUG
     assert (len(sys.argv) == 3 or
             (len(sys.argv) == 4 and sys.argv[3].lower() in log_lvl)), ("Wrong arguments: python3 sovcode.py <code_file>"
-                                                                       " <output_file> <debug_lvl>")
+                                                                       " <input_file> <debug_lvl>")
     if len(sys.argv) == 4:  # set logging lvl
         _, code_file, input_file, log_lvl_arg = sys.argv
         logging_lvl = log_lvl[str(log_lvl_arg).lower()]

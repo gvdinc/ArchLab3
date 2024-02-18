@@ -1,5 +1,6 @@
 import ply.yacc as yacc
-from src.translator.s_lexer import tokens  # noqa: F401
+
+from .s_lexer import tokens  # noqa: F401
 
 # Грамматика
 start = "program"
@@ -140,6 +141,6 @@ def parse_sovcode(src):
 
 # # Пример использования
 if __name__ == "__main__":
-    result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr")
+    result = parse_sovcode("/src/examples/debug.ussr")
     for line in result:
         print(line)

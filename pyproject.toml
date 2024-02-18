@@ -6,15 +6,15 @@ authors = ["grebenkin_vd <vadim@grebenkin.pro>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 ply = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-coverage = "^7.4.1"
-mypy = "^1.8.0"
-pytest = "^8.0.1"
+coverage = "^7.2.7"
+mypy = "^1.4.1"
+pytest = "^7.4.0"
 pytest-golden = "^0.2.2"
-ruff = "^0.2.1"
+ruff = "^0.1.3"
 
 [build-system]
 requires = ["poetry-core"]
@@ -94,7 +94,7 @@ ignore = [
 unfixable = [
     "ERA001", # prohibit to "auto-fix" (=remove) commented-out code
 ]
-src = ["source"]
+src = ["src"]
 
 [tool.ruff.mccabe]
 max-complexity = 7

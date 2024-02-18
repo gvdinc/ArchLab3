@@ -4,8 +4,9 @@ import typing
 from enum import Enum
 
 import pytest
+
 import src.translator.s_lexer as lexer
-from src.common.cmds import Cmd, cmd_codes
+from src.transit.cmds import Cmd, cmd_codes
 
 
 class VarType(Enum):
@@ -188,7 +189,7 @@ class MemStat:
     def clear_buffer(self):
         self._buff_it = 0
         self._buffer = {}
-        print("\033[33m", "sys op: buffer cleared", "\033[0m")
+        print("sys op: buffer cleared")
 
     def check_vars_type(self, var1: str, var2: str) -> bool:
         type1: VarType = self.get_var_type(var1)
@@ -203,6 +204,7 @@ class MemStat:
 class Coder:
     def __init__(self):
         self.instr_buf: typing.ClassVar = []
+        self.logs: str = ""
 
     def gen(self, cmd: Cmd, arg: int = 0) -> int:
         instruction = ""
@@ -211,8 +213,13 @@ class Coder:
         instruction += to_twos_complement(arg)
         self.instr_buf.append(instruction)
         index = len(self.instr_buf) - 1
-        print(index, instruction, "#", cmd.name, arg)
+        log: str = str(index) + " " + str(instruction) + " #" + str(cmd.name) + " " + str(arg)
+        print(log)
+        self.logs += log + ", "
         return index  # возвращаем индекс инструкции в буфере
+
+    def get_log(self) -> str:
+        return self.logs
 
     def change_instruction(self, index: int, cmd: Cmd, arg: int = 0) -> int:
         assert 0 <= index < len(self.instr_buf), IndexError
