@@ -1,14 +1,17 @@
 """Транслятор sovcode в машинный код.
 """
+
 import re
 import sys
 
 import pytest
-import s_parser as parser
-from structures import Cmd, Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
+
+from src.transit.cmds import Cmd
+from src.translator import s_parser as parser
+from src.translator.structures import Coder, ExprType, MemStat, VarType, binary_32_16_split, liter_to_assembly
 
 mem_stat: MemStat
-coder = Coder()
+coder: Coder = Coder()
 default_in_port = 0
 default_out_port = 1
 
@@ -78,7 +81,8 @@ def inst_op_not(addr: int):
 
 
 def inst_op_uminus(addr: int):
-    coder.gen(Cmd.LSL, 32)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)
     coder.gen(Cmd.SUB, addr)  # вычтем положительное знач
     coder.gen(Cmd.SAVE, addr)  # сохраним
     print("op: ", "-", addr, sep="")
@@ -111,7 +115,6 @@ def inst_op_greater_than(addr1: int, addr2: int, res_addr: int):  # ('>', 12, 15
     coder.gen(Cmd.LDM, addr1)
     coder.gen(Cmd.SUB, addr2)
     coder.gen(Cmd.DECR)
-    coder.gen(Cmd.CMP)
     coder.gen(Cmd.SAVE, res_addr)
     print("op:", addr1, ">", addr2, "save to buffer", res_addr)
 
@@ -119,7 +122,6 @@ def inst_op_greater_than(addr1: int, addr2: int, res_addr: int):  # ('>', 12, 15
 def inst_op_less_than(addr1: int, addr2: int, res_addr: int):  # ('<', 12, 15)
     coder.gen(Cmd.LDM, addr2)
     coder.gen(Cmd.SUB, addr1)
-    coder.gen(Cmd.DECR)
     coder.gen(Cmd.CMP)
     coder.gen(Cmd.SAVE, res_addr)
     print("op:", addr1, "<", addr2, "save to buffer", res_addr)
@@ -240,9 +242,11 @@ def inst_save_var_to_buffer(var_name: str) -> int:
 def inst_add_char_to_str_var(var_addr: int, val_addr: int) -> int:  # записывает символ из val_addr в конец строки var
     assert mem_stat.get_var_type(str(val_addr)) == VarType.CHAR, TypeError
     # Проверим, что строка, не полна. Если это так, то увеличим её на 1
-    coder.gen(Cmd.LSL, 32)  # acc = 0, нужно, т.к. ldi задаёт лишь младшие 16 бит
+    coder.gen(Cmd.LSL)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)  # acc = 0, нужно, т.к. ldi задаёт лишь младшие 16 бит
     coder.gen(Cmd.LDI, 255)  # acc = 255, макс длина строки 255
     coder.gen(Cmd.SUB, var_addr)  # acc = 255 - длина строки
+    coder.gen(Cmd.CMP, var_addr)
     promise_out_index = coder.gen(Cmd.NOP)  # coder.gen(Cmd.JZC, out_addr)
     coder.gen(Cmd.LDM, var_addr)
     coder.gen(Cmd.INCR)
@@ -271,7 +275,7 @@ def inst_save_symbol(sym: str, addr: int):
     coder.gen(Cmd.LSL, 16)  # верхнюю часть в старшие разряды, заодно затерли мусор
     coder.gen(Cmd.LDI, code_lower)
     coder.gen(Cmd.SAVE, addr)
-    print("\033[3mop: save sym \'", sym, "\' to addr: ", addr, "\033[0m", sep="")
+    print("op: save sym \'", sym, "\' to addr: ", addr, sep="")
 
 
 def inst_save_string(expression: tuple) -> int:
@@ -293,13 +297,14 @@ def inst_save_string(expression: tuple) -> int:
         assert length <= 255, "Line is too big"
         var_addr: int = mem_stat.get_var(var_name)
 
-    coder.gen(Cmd.LSL, 32)  # acc = 0
+    coder.gen(Cmd.LSL)  # обнулим аккумулятор
+    coder.gen(Cmd.LSL)
     coder.gen(Cmd.LDI, length)  # acc(lower) = line length
     coder.gen(Cmd.SAVE, var_addr)  # сохраняем первую (служебную) ячейку длины строки
-    print("\033[3mop: save str length to addr", var_addr, "\033[0m")
+    print("op: save str length to addr", var_addr)
     for i in range(1, length + 1):
         inst_save_symbol(line[i - 1], var_addr + i)
-    print("\033[34m", "$(str)", var_addr, "--", "save result", line, "\033[0m", "\n")
+    print("$(str)", var_addr, "--", "save result", line, "\n")
     return -1
 
 
@@ -310,19 +315,20 @@ def inst_read(expression: tuple, port: int = default_in_port) -> int:  # ('read'
     addr = mem_stat.get_var(var) if mem_stat.is_initialized(var) else mem_stat.allocate_var(var, VarType.CHAR)
     coder.gen(Cmd.IN, port)
     coder.gen(Cmd.SAVE, addr)
-    print("\033[34m", "op: read from port (", port, ") to var ", var, "(", addr, ")",
-          " instructions complete! \033[0m\n", sep="")
+    print("op: read from port (", port, ") to var ", var, "(", addr, ")",
+          " instructions complete!\n", sep="")
     return -1
 
 
 def inst_write_line(addr: int, port: int = default_out_port):
     # подразумевается что уже проверено, что по адресу расположена str переменная (начало)
-    coder.gen(Cmd.LDM, addr)  # длина строки N
     addr_it = mem_stat.allocate_tmp(VarType.INT)
     addr_end = mem_stat.allocate_tmp(VarType.INT)
 
+    coder.gen(Cmd.LSL)
+    coder.gen(Cmd.LSL)
     coder.gen(Cmd.LDI, addr)  # acc = addr начала строки (ячейка хранит размер строки)
-    coder.gen(Cmd.SAVE, addr_it)  # addr_it = addr + 1 (указатель на начало строки - служебная ячейка)
+    coder.gen(Cmd.SAVE, addr_it)  # addr_it = addr (default) (указатель на начало строки - служебная ячейка)
     coder.gen(Cmd.INCR)  # acc += 1
     coder.gen(Cmd.ADD, addr)  # addr + len + 1 = адрес конца строки (не включительно)
     coder.gen(Cmd.SAVE, addr_end)  # сохраняем в addr_end
@@ -332,6 +338,7 @@ def inst_write_line(addr: int, port: int = default_out_port):
     coder.gen(Cmd.INCR)  # acc++
     coder.gen(Cmd.SAVE, addr_it)  # addr_it += 1
     coder.gen(Cmd.SUB, addr_end)  # acc = addr_it - addr_end
+    coder.gen(Cmd.CMP)
     promise_out_index = coder.gen(Cmd.NOP)  # promised JZ out_index
     coder.gen(Cmd.LDREF, addr_it)  # acc = dmem[addr + addr_it] (char) reference load
     coder.gen(Cmd.OUT, port)  # вывод addr_it(ого) символа строки
@@ -354,7 +361,7 @@ def inst_write(expression: tuple, port: int = default_out_port):  # ('write', ('
         coder.gen(Cmd.OUT, port)
     else:  # STR
         inst_write_line(addr, port)
-    print("\033[34mop: write var ", var, "(", addr, ") to port (", port, ") instructions complete! \033[0m\n", sep="")
+    print("op: write var ", var, "(", addr, ") to port (", port, ") instructions complete!\n", sep="")
     return -1
 
 
@@ -461,7 +468,7 @@ def translate_assignment(expression: tuple) -> int:
             var_addr: int = simplify_expression(expression)
         else:
             pytest.fail(SyntaxError)
-        print("\033[34m", "$", var_addr, "--", "save result", expression[2], "\033[0m", "\n")
+        print("$", var_addr, "--", "save result", expression[2], "\n")
         return -1
 
     if len(expression) == 3:  # операция переопределения
@@ -469,7 +476,7 @@ def translate_assignment(expression: tuple) -> int:
             var_addr: int = simplify_expression(expression)
         else:
             pytest.fail(SyntaxError)
-        print("\033[34m", "$", var_addr, "--", "save result", expression[1], "\033[0m", "\n")
+        print("$", var_addr, "--", "save result", expression[1], "\n")
         return -1
     pytest.fail(SyntaxError)
 
@@ -484,8 +491,8 @@ def translate_if_expression(expression: tuple, rec_depth: int) -> int:
     translate(expression[2][0], rec_depth + 1)  # (do smth)
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход (если ложь)
-    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| out", out_index, "\033[0m", "\n", sep="")
+    print("if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| out", out_index, "\n", sep="")
     return -1
 
 
@@ -503,8 +510,8 @@ def translate_if_else_expression(expression: tuple, rec_depth: int) -> int:
     translate(expression[3][0], rec_depth + 1)  # (do smth2)
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JMP, out_index)
-    print("\033[34m", "if_else (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| else", else_index, " out", out_index, "\033[0m", "\n", sep="")
+    print("if_else (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| else", else_index, " out", out_index, "\n", sep="")
     return -1
 
 
@@ -517,18 +524,18 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
     coder.gen(Cmd.LDM, condition_res_addr)
     coder.gen(Cmd.CMP)  # условие проверено, флаги выставлены
     promise_out_index = coder.gen(Cmd.NOP)  # promised CMD.JZ out_index
-
-    translate(expression[2][0], rec_depth + 1)  # тело цикла
+    for exp in expression[2]:
+        translate(exp, rec_depth + 1)  # тело цикла
     coder.gen(Cmd.JMP, condition_index)  # Cmd.JMP condition_index, переход на условие
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
-    print("\033[34m", "while (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| condition", condition_index, " out", out_index, "\033[0m", "\n", sep="")
+    print("while (depth =", rec_depth, ") instructions complete -- ",
+          condition, "| condition", condition_index, " out", out_index, "\n", sep="")
     return -1
 
 
 def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
-    print("\033[32m{}\033[0m".format(str(op)))
+    print(str(op))
     if rec_depth == 0:
         mem_stat.clear_buffer()
 
@@ -565,32 +572,41 @@ def translate(op: tuple, rec_depth: int = 0) -> int:  # noqa: C901
     return -1
 
 
-def main():
-    sovcode_file: str = sys.argv[1]
-    binary_out_file: str = sys.argv[2]
+def main(sovcode_file: str, binary_out_file: str, code_description: str):
     global mem_stat
+    global coder
+    global default_in_port
+    global default_out_port
     mem_stat = MemStat(sovcode_file)
+    coder = Coder()
+    default_in_port = 0
+    default_out_port = 1
+
     ops_parsed = parser.parse_sovcode(sovcode_file)
-    for op in ops_parsed:
-        print(op)
-    print("")
 
     for op in ops_parsed:  # обработаем операции верхнего уровня (if, if_else, while, read, write, assign, identify)
         assert translate(op) < 0, MemoryError
     coder.gen(Cmd.HALT)  # конец программы
     assert coder.check_inst_buf(), MemoryError
-    print("\033[35m", "Compilation complete!", "\033[0m", sep="")
+    print("Compilation complete!", sep="")
 
     # Запись сгенерированного машинного кода в файл
     binary_code = coder.get_binary_code()
-    print(binary_code)
     with open(binary_out_file, "wb") as f:
         for instruction in binary_code:
             instr_int = int(instruction, 2)
             f.write(instr_int.to_bytes(4, "big"))  # Примерный формат записи машинного кода
         f.flush()
         f.close()
+    with open(code_description, "w") as file:
+        description: str = coder.get_log()
+        file.write(description)
+        file.flush()
+        f.close()
 
 
 if __name__ == "__main__":
-    main()
+    code_file: str = sys.argv[1]
+    out_file: str = sys.argv[2]
+    code_description_file: str = sys.argv[3]
+    main(code_file, out_file, code_description_file)

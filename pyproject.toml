@@ -6,7 +6,7 @@ authors = ["grebenkin_vd <vadim@grebenkin.pro>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 ply = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
@@ -94,7 +94,7 @@ ignore = [
 unfixable = [
     "ERA001", # prohibit to "auto-fix" (=remove) commented-out code
 ]
-src = ["source"]
+src = ["src"]
 
 [tool.ruff.mccabe]
 max-complexity = 7

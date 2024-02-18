@@ -1,0 +1,281 @@
+in_code: |-
+  симв ввод = "x";
+  >> ввод;
+  пока (ввод != 10){
+      << ввод;
+      >> ввод;
+  }
+in_stdin: |-
+  Товарищ Сталин🕊
+out_code: |-
+  0 000000000000110000000000000000 #LDI 0, 1 000000000010100000000000010000 #LSL 16, 2 000000000000110000000001111000 #LDI 120, 3 000000000001000000001000001111 #SAVE 527, 4 000000000000100000001000001111 #LDM 527, 5 000000000001000000000000000000 #SAVE 0, 6 000000000110100000000000000000 #IN 0, 7 000000000001000000000000000000 #SAVE 0, 8 000000000000100000000000000000 #LDM 0, 9 000000000001000000001000001111 #SAVE 527, 10 000000000000110000000000000000 #LDI 0, 11 000000000010100000000000010000 #LSL 16, 12 000000000000110000000000001010 #LDI 10, 13 000000000001000000001000010000 #SAVE 528, 14 000000000000100000001000001111 #LDM 527, 15 000000000001100000001000010000 #SUB 528, 16 000000000001000000001000010001 #SAVE 529, 17 000000000000100000001000010001 #LDM 529, 18 000000000001110000000000000000 #CMP 0, 19 000000000000000000000000000000 #NOP 0, 20 000000000000100000000000000000 #LDM 0, 21 000000000110110000000000000001 #OUT 1, 22 000000000110100000000000000000 #IN 0, 23 000000000001000000000000000000 #SAVE 0, 24 000000000100100000000000001000 #JMP 8, 25 000000000000010000000000000000 #HALT 0, 
+out_stdout: |
+  Эмулятор ЭВМ исполнителя Совкода
+  str output: Товарищ Сталин🕊
+  instr_counter: 260 , ticks: 260
+out_log: |
+  INFO    emulator:main          Got instructions and user input
+  INFO    emulator:emulation     Starting emulation
+  DEBUG   emulator:emulation     TICK:   0 PC:   0 AR:   0 RAR:   0 MEM_OUT: [] ACC: 0 	ldi0
+  DEBUG   emulator:emulation     TICK:   1 PC:   1 AR:   0 RAR:   0 MEM_OUT: [] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:   2 PC:   2 AR:  16 RAR:   0 MEM_OUT: [] ACC: 0 	ldi120
+  DEBUG   emulator:emulation     TICK:   3 PC:   3 AR: 120 RAR:   0 MEM_OUT: [] ACC: 120 	save527
+  DEBUG   emulator:emulation     TICK:   4 PC:   4 AR: 527 RAR:   0 MEM_OUT: [] ACC: 120 	ldm527
+  DEBUG   emulator:emulation     TICK:   5 PC:   5 AR: 527 RAR: 120 MEM_OUT: [] ACC: 120 	save0
+  DEBUG   emulator:emulation     TICK:   6 PC:   6 AR:   0 RAR:   0 MEM_OUT: [] ACC: 120 	in0
+  DEBUG   emulator:emulation     TICK:   7 PC:   7 AR:   0 RAR: 1058 MEM_OUT: [] ACC: 1058 	save0
+  DEBUG   emulator:emulation     TICK:   8 PC:   8 AR:   0 RAR: 120 MEM_OUT: [] ACC: 1058 	ldm0
+  DEBUG   emulator:emulation     TICK:   9 PC:   9 AR:   0 RAR: 1058 MEM_OUT: [] ACC: 1058 	save527
+  DEBUG   emulator:emulation     TICK:  10 PC:  10 AR: 527 RAR: 120 MEM_OUT: [] ACC: 1058 	ldi0
+  DEBUG   emulator:emulation     TICK:  11 PC:  11 AR:   0 RAR: 120 MEM_OUT: [] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:  12 PC:  12 AR:  16 RAR:   0 MEM_OUT: [] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK:  13 PC:  13 AR:  10 RAR:   0 MEM_OUT: [] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK:  14 PC:  14 AR: 528 RAR:   0 MEM_OUT: [] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK:  15 PC:  15 AR: 527 RAR: 1058 MEM_OUT: [] ACC: 1058 	sub528
+  DEBUG   emulator:emulation     TICK:  16 PC:  16 AR: 528 RAR: 1048 MEM_OUT: [] ACC: 1048 	save529
+  DEBUG   emulator:emulation     TICK:  17 PC:  17 AR: 529 RAR:   0 MEM_OUT: [] ACC: 1048 	ldm529
+  DEBUG   emulator:emulation     TICK:  18 PC:  18 AR: 529 RAR: 1048 MEM_OUT: [] ACC: 1048 	cmp0
+  DEBUG   emulator:emulation     TICK:  19 PC:  19 AR:   0 RAR: 1048 MEM_OUT: [] ACC: 1048 	jz25
+  DEBUG   emulator:emulation     TICK:  20 PC:  20 AR:   0 RAR: 1048 MEM_OUT: [] ACC: 1048 	ldm0
+  DEBUG   emulator:emulation     TICK:  21 PC:  21 AR:   0 RAR: 1058 MEM_OUT: [] ACC: 1058 	out1
+  DEBUG   emulator:emulation     TICK:  22 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058] ACC: 1058 	in0
+  DEBUG   emulator:emulation     TICK:  23 PC:  23 AR:   0 RAR: 1086 MEM_OUT: [1058] ACC: 1086 	save0
+  DEBUG   emulator:emulation     TICK:  24 PC:  24 AR:   0 RAR: 1058 MEM_OUT: [1058] ACC: 1086 	jmp8
+  DEBUG   emulator:emulation     TICK:  25 PC:   8 AR:   0 RAR: 1058 MEM_OUT: [1058] ACC: 1086 	ldm0
+  DEBUG   emulator:emulation     TICK:  26 PC:   9 AR:   0 RAR: 1086 MEM_OUT: [1058] ACC: 1086 	save527
+  DEBUG   emulator:emulation     TICK:  27 PC:  10 AR: 527 RAR: 1058 MEM_OUT: [1058] ACC: 1086 	ldi0
+  DEBUG   emulator:emulation     TICK:  28 PC:  11 AR:   0 RAR: 1058 MEM_OUT: [1058] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:  29 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK:  30 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK:  31 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK:  32 PC:  15 AR: 527 RAR: 1086 MEM_OUT: [1058] ACC: 1086 	sub528
+  DEBUG   emulator:emulation     TICK:  33 PC:  16 AR: 528 RAR: 1076 MEM_OUT: [1058] ACC: 1076 	save529
+  DEBUG   emulator:emulation     TICK:  34 PC:  17 AR: 529 RAR: 1048 MEM_OUT: [1058] ACC: 1076 	ldm529
+  DEBUG   emulator:emulation     TICK:  35 PC:  18 AR: 529 RAR: 1076 MEM_OUT: [1058] ACC: 1076 	cmp0
+  DEBUG   emulator:emulation     TICK:  36 PC:  19 AR:   0 RAR: 1076 MEM_OUT: [1058] ACC: 1076 	jz25
+  DEBUG   emulator:emulation     TICK:  37 PC:  20 AR:   0 RAR: 1076 MEM_OUT: [1058] ACC: 1076 	ldm0
+  DEBUG   emulator:emulation     TICK:  38 PC:  21 AR:   0 RAR: 1086 MEM_OUT: [1058] ACC: 1086 	out1
+  DEBUG   emulator:emulation     TICK:  39 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086] ACC: 1086 	in0
+  DEBUG   emulator:emulation     TICK:  40 PC:  23 AR:   0 RAR: 1074 MEM_OUT: [1058, 1086] ACC: 1074 	save0
+  DEBUG   emulator:emulation     TICK:  41 PC:  24 AR:   0 RAR: 1086 MEM_OUT: [1058, 1086] ACC: 1074 	jmp8
+  DEBUG   emulator:emulation     TICK:  42 PC:   8 AR:   0 RAR: 1086 MEM_OUT: [1058, 1086] ACC: 1074 	ldm0
+  DEBUG   emulator:emulation     TICK:  43 PC:   9 AR:   0 RAR: 1074 MEM_OUT: [1058, 1086] ACC: 1074 	save527
+  DEBUG   emulator:emulation     TICK:  44 PC:  10 AR: 527 RAR: 1086 MEM_OUT: [1058, 1086] ACC: 1074 	ldi0
+  DEBUG   emulator:emulation     TICK:  45 PC:  11 AR:   0 RAR: 1086 MEM_OUT: [1058, 1086] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:  46 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK:  47 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK:  48 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK:  49 PC:  15 AR: 527 RAR: 1074 MEM_OUT: [1058, 1086] ACC: 1074 	sub528
+  DEBUG   emulator:emulation     TICK:  50 PC:  16 AR: 528 RAR: 1064 MEM_OUT: [1058, 1086] ACC: 1064 	save529
+  DEBUG   emulator:emulation     TICK:  51 PC:  17 AR: 529 RAR: 1076 MEM_OUT: [1058, 1086] ACC: 1064 	ldm529
+  DEBUG   emulator:emulation     TICK:  52 PC:  18 AR: 529 RAR: 1064 MEM_OUT: [1058, 1086] ACC: 1064 	cmp0
+  DEBUG   emulator:emulation     TICK:  53 PC:  19 AR:   0 RAR: 1064 MEM_OUT: [1058, 1086] ACC: 1064 	jz25
+  DEBUG   emulator:emulation     TICK:  54 PC:  20 AR:   0 RAR: 1064 MEM_OUT: [1058, 1086] ACC: 1064 	ldm0
+  DEBUG   emulator:emulation     TICK:  55 PC:  21 AR:   0 RAR: 1074 MEM_OUT: [1058, 1086] ACC: 1074 	out1
+  DEBUG   emulator:emulation     TICK:  56 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074] ACC: 1074 	in0
+  DEBUG   emulator:emulation     TICK:  57 PC:  23 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	save0
+  DEBUG   emulator:emulation     TICK:  58 PC:  24 AR:   0 RAR: 1074 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	jmp8
+  DEBUG   emulator:emulation     TICK:  59 PC:   8 AR:   0 RAR: 1074 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	ldm0
+  DEBUG   emulator:emulation     TICK:  60 PC:   9 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	save527
+  DEBUG   emulator:emulation     TICK:  61 PC:  10 AR: 527 RAR: 1074 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	ldi0
+  DEBUG   emulator:emulation     TICK:  62 PC:  11 AR:   0 RAR: 1074 MEM_OUT: [1058, 1086, 1074] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:  63 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK:  64 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK:  65 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK:  66 PC:  15 AR: 527 RAR: 1072 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	sub528
+  DEBUG   emulator:emulation     TICK:  67 PC:  16 AR: 528 RAR: 1062 MEM_OUT: [1058, 1086, 1074] ACC: 1062 	save529
+  DEBUG   emulator:emulation     TICK:  68 PC:  17 AR: 529 RAR: 1064 MEM_OUT: [1058, 1086, 1074] ACC: 1062 	ldm529
+  DEBUG   emulator:emulation     TICK:  69 PC:  18 AR: 529 RAR: 1062 MEM_OUT: [1058, 1086, 1074] ACC: 1062 	cmp0
+  DEBUG   emulator:emulation     TICK:  70 PC:  19 AR:   0 RAR: 1062 MEM_OUT: [1058, 1086, 1074] ACC: 1062 	jz25
+  DEBUG   emulator:emulation     TICK:  71 PC:  20 AR:   0 RAR: 1062 MEM_OUT: [1058, 1086, 1074] ACC: 1062 	ldm0
+  DEBUG   emulator:emulation     TICK:  72 PC:  21 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074] ACC: 1072 	out1
+  DEBUG   emulator:emulation     TICK:  73 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1072 	in0
+  DEBUG   emulator:emulation     TICK:  74 PC:  23 AR:   0 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	save0
+  DEBUG   emulator:emulation     TICK:  75 PC:  24 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	jmp8
+  DEBUG   emulator:emulation     TICK:  76 PC:   8 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	ldm0
+  DEBUG   emulator:emulation     TICK:  77 PC:   9 AR:   0 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	save527
+  DEBUG   emulator:emulation     TICK:  78 PC:  10 AR: 527 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	ldi0
+  DEBUG   emulator:emulation     TICK:  79 PC:  11 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:  80 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK:  81 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK:  82 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK:  83 PC:  15 AR: 527 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	sub528
+  DEBUG   emulator:emulation     TICK:  84 PC:  16 AR: 528 RAR: 1078 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1078 	save529
+  DEBUG   emulator:emulation     TICK:  85 PC:  17 AR: 529 RAR: 1062 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1078 	ldm529
+  DEBUG   emulator:emulation     TICK:  86 PC:  18 AR: 529 RAR: 1078 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1078 	cmp0
+  DEBUG   emulator:emulation     TICK:  87 PC:  19 AR:   0 RAR: 1078 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1078 	jz25
+  DEBUG   emulator:emulation     TICK:  88 PC:  20 AR:   0 RAR: 1078 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1078 	ldm0
+  DEBUG   emulator:emulation     TICK:  89 PC:  21 AR:   0 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072] ACC: 1088 	out1
+  DEBUG   emulator:emulation     TICK:  90 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1088 	in0
+  DEBUG   emulator:emulation     TICK:  91 PC:  23 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	save0
+  DEBUG   emulator:emulation     TICK:  92 PC:  24 AR:   0 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	jmp8
+  DEBUG   emulator:emulation     TICK:  93 PC:   8 AR:   0 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	ldm0
+  DEBUG   emulator:emulation     TICK:  94 PC:   9 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	save527
+  DEBUG   emulator:emulation     TICK:  95 PC:  10 AR: 527 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	ldi0
+  DEBUG   emulator:emulation     TICK:  96 PC:  11 AR:   0 RAR: 1088 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK:  97 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK:  98 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK:  99 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 100 PC:  15 AR: 527 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	sub528
+  DEBUG   emulator:emulation     TICK: 101 PC:  16 AR: 528 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1070 	save529
+  DEBUG   emulator:emulation     TICK: 102 PC:  17 AR: 529 RAR: 1078 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1070 	ldm529
+  DEBUG   emulator:emulation     TICK: 103 PC:  18 AR: 529 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1070 	cmp0
+  DEBUG   emulator:emulation     TICK: 104 PC:  19 AR:   0 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1070 	jz25
+  DEBUG   emulator:emulation     TICK: 105 PC:  20 AR:   0 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1070 	ldm0
+  DEBUG   emulator:emulation     TICK: 106 PC:  21 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088] ACC: 1080 	out1
+  DEBUG   emulator:emulation     TICK: 107 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1080 	in0
+  DEBUG   emulator:emulation     TICK: 108 PC:  23 AR:   0 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	save0
+  DEBUG   emulator:emulation     TICK: 109 PC:  24 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	jmp8
+  DEBUG   emulator:emulation     TICK: 110 PC:   8 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	ldm0
+  DEBUG   emulator:emulation     TICK: 111 PC:   9 AR:   0 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	save527
+  DEBUG   emulator:emulation     TICK: 112 PC:  10 AR: 527 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	ldi0
+  DEBUG   emulator:emulation     TICK: 113 PC:  11 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 114 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 115 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 116 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 117 PC:  15 AR: 527 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	sub528
+  DEBUG   emulator:emulation     TICK: 118 PC:  16 AR: 528 RAR: 1087 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1087 	save529
+  DEBUG   emulator:emulation     TICK: 119 PC:  17 AR: 529 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1087 	ldm529
+  DEBUG   emulator:emulation     TICK: 120 PC:  18 AR: 529 RAR: 1087 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1087 	cmp0
+  DEBUG   emulator:emulation     TICK: 121 PC:  19 AR:   0 RAR: 1087 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1087 	jz25
+  DEBUG   emulator:emulation     TICK: 122 PC:  20 AR:   0 RAR: 1087 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1087 	ldm0
+  DEBUG   emulator:emulation     TICK: 123 PC:  21 AR:   0 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080] ACC: 1097 	out1
+  DEBUG   emulator:emulation     TICK: 124 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 1097 	in0
+  DEBUG   emulator:emulation     TICK: 125 PC:  23 AR:   0 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	save0
+  DEBUG   emulator:emulation     TICK: 126 PC:  24 AR:   0 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	jmp8
+  DEBUG   emulator:emulation     TICK: 127 PC:   8 AR:   0 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	ldm0
+  DEBUG   emulator:emulation     TICK: 128 PC:   9 AR:   0 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	save527
+  DEBUG   emulator:emulation     TICK: 129 PC:  10 AR: 527 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	ldi0
+  DEBUG   emulator:emulation     TICK: 130 PC:  11 AR:   0 RAR: 1097 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 131 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 132 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 133 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 134 PC:  15 AR: 527 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	sub528
+  DEBUG   emulator:emulation     TICK: 135 PC:  16 AR: 528 RAR:  22 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 22 	save529
+  DEBUG   emulator:emulation     TICK: 136 PC:  17 AR: 529 RAR: 1087 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 22 	ldm529
+  DEBUG   emulator:emulation     TICK: 137 PC:  18 AR: 529 RAR:  22 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 22 	cmp0
+  DEBUG   emulator:emulation     TICK: 138 PC:  19 AR:   0 RAR:  22 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 22 	jz25
+  DEBUG   emulator:emulation     TICK: 139 PC:  20 AR:   0 RAR:  22 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 22 	ldm0
+  DEBUG   emulator:emulation     TICK: 140 PC:  21 AR:   0 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097] ACC: 32 	out1
+  DEBUG   emulator:emulation     TICK: 141 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 32 	in0
+  DEBUG   emulator:emulation     TICK: 142 PC:  23 AR:   0 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	save0
+  DEBUG   emulator:emulation     TICK: 143 PC:  24 AR:   0 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	jmp8
+  DEBUG   emulator:emulation     TICK: 144 PC:   8 AR:   0 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	ldm0
+  DEBUG   emulator:emulation     TICK: 145 PC:   9 AR:   0 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	save527
+  DEBUG   emulator:emulation     TICK: 146 PC:  10 AR: 527 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	ldi0
+  DEBUG   emulator:emulation     TICK: 147 PC:  11 AR:   0 RAR:  32 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 148 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 149 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 150 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 151 PC:  15 AR: 527 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	sub528
+  DEBUG   emulator:emulation     TICK: 152 PC:  16 AR: 528 RAR: 1047 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1047 	save529
+  DEBUG   emulator:emulation     TICK: 153 PC:  17 AR: 529 RAR:  22 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1047 	ldm529
+  DEBUG   emulator:emulation     TICK: 154 PC:  18 AR: 529 RAR: 1047 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1047 	cmp0
+  DEBUG   emulator:emulation     TICK: 155 PC:  19 AR:   0 RAR: 1047 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1047 	jz25
+  DEBUG   emulator:emulation     TICK: 156 PC:  20 AR:   0 RAR: 1047 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1047 	ldm0
+  DEBUG   emulator:emulation     TICK: 157 PC:  21 AR:   0 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32] ACC: 1057 	out1
+  DEBUG   emulator:emulation     TICK: 158 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1057 	in0
+  DEBUG   emulator:emulation     TICK: 159 PC:  23 AR:   0 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	save0
+  DEBUG   emulator:emulation     TICK: 160 PC:  24 AR:   0 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	jmp8
+  DEBUG   emulator:emulation     TICK: 161 PC:   8 AR:   0 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	ldm0
+  DEBUG   emulator:emulation     TICK: 162 PC:   9 AR:   0 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	save527
+  DEBUG   emulator:emulation     TICK: 163 PC:  10 AR: 527 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	ldi0
+  DEBUG   emulator:emulation     TICK: 164 PC:  11 AR:   0 RAR: 1057 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 165 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 166 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 167 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 168 PC:  15 AR: 527 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	sub528
+  DEBUG   emulator:emulation     TICK: 169 PC:  16 AR: 528 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1080 	save529
+  DEBUG   emulator:emulation     TICK: 170 PC:  17 AR: 529 RAR: 1047 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1080 	ldm529
+  DEBUG   emulator:emulation     TICK: 171 PC:  18 AR: 529 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1080 	cmp0
+  DEBUG   emulator:emulation     TICK: 172 PC:  19 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1080 	jz25
+  DEBUG   emulator:emulation     TICK: 173 PC:  20 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1080 	ldm0
+  DEBUG   emulator:emulation     TICK: 174 PC:  21 AR:   0 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057] ACC: 1090 	out1
+  DEBUG   emulator:emulation     TICK: 175 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1090 	in0
+  DEBUG   emulator:emulation     TICK: 176 PC:  23 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	save0
+  DEBUG   emulator:emulation     TICK: 177 PC:  24 AR:   0 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	jmp8
+  DEBUG   emulator:emulation     TICK: 178 PC:   8 AR:   0 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	ldm0
+  DEBUG   emulator:emulation     TICK: 179 PC:   9 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	save527
+  DEBUG   emulator:emulation     TICK: 180 PC:  10 AR: 527 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	ldi0
+  DEBUG   emulator:emulation     TICK: 181 PC:  11 AR:   0 RAR: 1090 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 182 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 183 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 184 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 185 PC:  15 AR: 527 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	sub528
+  DEBUG   emulator:emulation     TICK: 186 PC:  16 AR: 528 RAR: 1062 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1062 	save529
+  DEBUG   emulator:emulation     TICK: 187 PC:  17 AR: 529 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1062 	ldm529
+  DEBUG   emulator:emulation     TICK: 188 PC:  18 AR: 529 RAR: 1062 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1062 	cmp0
+  DEBUG   emulator:emulation     TICK: 189 PC:  19 AR:   0 RAR: 1062 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1062 	jz25
+  DEBUG   emulator:emulation     TICK: 190 PC:  20 AR:   0 RAR: 1062 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1062 	ldm0
+  DEBUG   emulator:emulation     TICK: 191 PC:  21 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090] ACC: 1072 	out1
+  DEBUG   emulator:emulation     TICK: 192 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1072 	in0
+  DEBUG   emulator:emulation     TICK: 193 PC:  23 AR:   0 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	save0
+  DEBUG   emulator:emulation     TICK: 194 PC:  24 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	jmp8
+  DEBUG   emulator:emulation     TICK: 195 PC:   8 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	ldm0
+  DEBUG   emulator:emulation     TICK: 196 PC:   9 AR:   0 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	save527
+  DEBUG   emulator:emulation     TICK: 197 PC:  10 AR: 527 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	ldi0
+  DEBUG   emulator:emulation     TICK: 198 PC:  11 AR:   0 RAR: 1072 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 199 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 200 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 201 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 202 PC:  15 AR: 527 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	sub528
+  DEBUG   emulator:emulation     TICK: 203 PC:  16 AR: 528 RAR: 1073 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1073 	save529
+  DEBUG   emulator:emulation     TICK: 204 PC:  17 AR: 529 RAR: 1062 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1073 	ldm529
+  DEBUG   emulator:emulation     TICK: 205 PC:  18 AR: 529 RAR: 1073 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1073 	cmp0
+  DEBUG   emulator:emulation     TICK: 206 PC:  19 AR:   0 RAR: 1073 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1073 	jz25
+  DEBUG   emulator:emulation     TICK: 207 PC:  20 AR:   0 RAR: 1073 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1073 	ldm0
+  DEBUG   emulator:emulation     TICK: 208 PC:  21 AR:   0 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072] ACC: 1083 	out1
+  DEBUG   emulator:emulation     TICK: 209 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1083 	in0
+  DEBUG   emulator:emulation     TICK: 210 PC:  23 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	save0
+  DEBUG   emulator:emulation     TICK: 211 PC:  24 AR:   0 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	jmp8
+  DEBUG   emulator:emulation     TICK: 212 PC:   8 AR:   0 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	ldm0
+  DEBUG   emulator:emulation     TICK: 213 PC:   9 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	save527
+  DEBUG   emulator:emulation     TICK: 214 PC:  10 AR: 527 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	ldi0
+  DEBUG   emulator:emulation     TICK: 215 PC:  11 AR:   0 RAR: 1083 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 216 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 217 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 218 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 219 PC:  15 AR: 527 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	sub528
+  DEBUG   emulator:emulation     TICK: 220 PC:  16 AR: 528 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1070 	save529
+  DEBUG   emulator:emulation     TICK: 221 PC:  17 AR: 529 RAR: 1073 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1070 	ldm529
+  DEBUG   emulator:emulation     TICK: 222 PC:  18 AR: 529 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1070 	cmp0
+  DEBUG   emulator:emulation     TICK: 223 PC:  19 AR:   0 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1070 	jz25
+  DEBUG   emulator:emulation     TICK: 224 PC:  20 AR:   0 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1070 	ldm0
+  DEBUG   emulator:emulation     TICK: 225 PC:  21 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083] ACC: 1080 	out1
+  DEBUG   emulator:emulation     TICK: 226 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1080 	in0
+  DEBUG   emulator:emulation     TICK: 227 PC:  23 AR:   0 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	save0
+  DEBUG   emulator:emulation     TICK: 228 PC:  24 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	jmp8
+  DEBUG   emulator:emulation     TICK: 229 PC:   8 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	ldm0
+  DEBUG   emulator:emulation     TICK: 230 PC:   9 AR:   0 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	save527
+  DEBUG   emulator:emulation     TICK: 231 PC:  10 AR: 527 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	ldi0
+  DEBUG   emulator:emulation     TICK: 232 PC:  11 AR:   0 RAR: 1080 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 0 	lsl16
+  DEBUG   emulator:emulation     TICK: 233 PC:  12 AR:  16 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 0 	ldi10
+  DEBUG   emulator:emulation     TICK: 234 PC:  13 AR:  10 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 235 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 236 PC:  15 AR: 527 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	sub528
+  DEBUG   emulator:emulation     TICK: 237 PC:  16 AR: 528 RAR: 1075 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1075 	save529
+  DEBUG   emulator:emulation     TICK: 238 PC:  17 AR: 529 RAR: 1070 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1075 	ldm529
+  DEBUG   emulator:emulation     TICK: 239 PC:  18 AR: 529 RAR: 1075 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1075 	cmp0
+  DEBUG   emulator:emulation     TICK: 240 PC:  19 AR:   0 RAR: 1075 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1075 	jz25
+  DEBUG   emulator:emulation     TICK: 241 PC:  20 AR:   0 RAR: 1075 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1075 	ldm0
+  DEBUG   emulator:emulation     TICK: 242 PC:  21 AR:   0 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080] ACC: 1085 	out1
+  DEBUG   emulator:emulation     TICK: 243 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 1085 	in0
+  DEBUG   emulator:emulation     TICK: 244 PC:  23 AR:   0 RAR: 128330 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	save0
+  DEBUG   emulator:emulation     TICK: 245 PC:  24 AR:   0 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	jmp8
+  DEBUG   emulator:emulation     TICK: 246 PC:   8 AR:   0 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	ldm0
+  DEBUG   emulator:emulation     TICK: 247 PC:   9 AR:   0 RAR: 128330 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	save527
+  DEBUG   emulator:emulation     TICK: 248 PC:  10 AR: 527 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	ldi0
+  DEBUG   emulator:emulation     TICK: 249 PC:  11 AR:   0 RAR: 1085 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 65536 	lsl16
+  DEBUG   emulator:emulation     TICK: 250 PC:  12 AR:  16 RAR: 4294967296 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 4294967296 	ldi10
+  DEBUG   emulator:emulation     TICK: 251 PC:  13 AR:  10 RAR: 4294967296 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 10 	save528
+  DEBUG   emulator:emulation     TICK: 252 PC:  14 AR: 528 RAR:  10 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 10 	ldm527
+  DEBUG   emulator:emulation     TICK: 253 PC:  15 AR: 527 RAR: 128330 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	sub528
+  DEBUG   emulator:emulation     TICK: 254 PC:  16 AR: 528 RAR: 128320 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128320 	save529
+  DEBUG   emulator:emulation     TICK: 255 PC:  17 AR: 529 RAR: 1075 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128320 	ldm529
+  DEBUG   emulator:emulation     TICK: 256 PC:  18 AR: 529 RAR: 128320 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128320 	cmp0
+  DEBUG   emulator:emulation     TICK: 257 PC:  19 AR:   0 RAR: 128320 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128320 	jz25
+  DEBUG   emulator:emulation     TICK: 258 PC:  20 AR:   0 RAR: 128320 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128320 	ldm0
+  DEBUG   emulator:emulation     TICK: 259 PC:  21 AR:   0 RAR: 128330 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085] ACC: 128330 	out1
+  DEBUG   emulator:emulation     TICK: 260 PC:  22 AR:   1 RAR:   0 MEM_OUT: [1058, 1086, 1074, 1072, 1088, 1080, 1097, 32, 1057, 1090, 1072, 1083, 1080, 1085, 128330] ACC: 128330 	in0
+  WARNING emulator:emulation     Input buffer is empty!
+  INFO    emulator:emulation     output_buffer: Товарищ Сталин🕊

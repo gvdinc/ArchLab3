@@ -1,41 +1,12 @@
+from __future__ import annotations
+
 import typing
 from enum import Enum
 
 import pytest
-import s_lexer as lexer
 
-
-class Cmd(Enum):
-    NOP: str = "nop"
-    HALT: str = "halt"
-    LDM: str = "ldm"
-    LDI: str = "ldi"
-    SAVE: str = "save"
-    ADD: str = "add"
-    SUB: str = "sub"
-    CMP: str = "cmp"
-    INCR: str = "incr"
-    DECR: str = "decr"
-    LSL: str = "lsl"
-    LSR: str = "lsr"
-    CLRC: str = "clrc"
-    CLRZ: str = "clrz"
-    AND: str = "and"
-    OR: str = "or"
-    NOT: str = "not"
-    XOR: str = "xor"
-    JMP: str = "jmp"
-    JZ: str = "jz"
-    JZC: str = "jzc"
-    MULT: str = "mult"
-    DIV: str = "dev"
-    MOD: str = "mod"
-    POW: str = "pow"
-    SQRT: str = "sqrt"
-    IN: str = "in"
-    OUT: str = "out"
-    LDREF: str = "ldref"
-    SAVEREF: str = "saveref"
+import src.translator.s_lexer as lexer
+from src.transit.cmds import Cmd, cmd_codes
 
 
 class VarType(Enum):
@@ -90,8 +61,8 @@ def to_twos_complement(num: int):
         # Положительное число
         return bin(num)[2:].zfill(bit_length).replace("0b", "")
     # Отрицательное число
-    positive_value = abs(num)
-    flipped_bits = bin(positive_value ^ (2 ** bit_length - 1))[2:]
+    d_positive_value = abs(num) - 1
+    flipped_bits = bin(d_positive_value ^ (2 ** bit_length - 1))[2:]
     return flipped_bits.zfill(bit_length).replace("0b", "")
 
 
@@ -216,13 +187,16 @@ class MemStat:
         pytest.fail(KeyError)
 
     def clear_buffer(self):
-        self._buff_it = self.buffer_initial
+        self._buff_it = 0
         self._buffer = {}
+        print("sys op: buffer cleared")
 
     def check_vars_type(self, var1: str, var2: str) -> bool:
         type1: VarType = self.get_var_type(var1)
         type2: VarType = self.get_var_type(var2)
         if type1 == type2:
+            return True
+        if type1 == VarType.CHAR and type2 == VarType.INT:
             return True
         return False
 
@@ -230,55 +204,29 @@ class MemStat:
 class Coder:
     def __init__(self):
         self.instr_buf: typing.ClassVar = []
-        self.cmd_codes: typing.ClassVar = {
-            Cmd.NOP: bin(0).zfill(16).replace("0b", ""),  # Операция простоя
-            Cmd.HALT: bin(1).zfill(16).replace("0b", ""),  # Сигнал остановки
-            Cmd.LDM: bin(2).zfill(16).replace("0b", ""),  # Загрузить знач из памяти данных в acc
-            Cmd.LDI: bin(3).zfill(16).replace("0b", ""),  # Загрузить знач из памяти команд в acc
-            Cmd.SAVE: bin(4).zfill(16).replace("0b", ""),  # Выгрузить значение аккумулятора в ячейку памяти
-            Cmd.ADD: bin(5).zfill(16).replace("0b", ""),  # Добавить значение из ячейки к аккумулятору
-            Cmd.SUB: bin(6).zfill(16).replace("0b", ""),  # Вычесть значение ячейки из аккумулятора
-            Cmd.CMP: bin(7).zfill(16).replace("0b", ""),  # Сравнить код из аккумулятора c ячейкой памяти
-            Cmd.INCR: bin(8).zfill(16).replace("0b", ""),  # Инкрементирует значение аккумулятора
-            Cmd.DECR: bin(9).zfill(16).replace("0b", ""),  # Декрементирует значение аккумулятора
-            Cmd.LSL: bin(10).zfill(16).replace("0b", ""),  # Бит. Сдвиг влево, устанавливается флаг c
-            Cmd.LSR: bin(11).zfill(16).replace("0b", ""),  # Бит. Сдвиг вправо, устанавливается флаг c
-            Cmd.CLRC: bin(12).zfill(16).replace("0b", ""),  # Сбрасывает значение флага переполнения
-            Cmd.CLRZ: bin(13).zfill(16).replace("0b", ""),  # Сбрасывает значение нулевого флага
-            Cmd.AND: bin(14).zfill(16).replace("0b", ""),  # Логическое и acc
-            Cmd.OR: bin(15).zfill(16).replace("0b", ""),  # Логическое или
-            Cmd.NOT: bin(16).zfill(16).replace("0b", ""),  # Логическое не acc
-            Cmd.XOR: bin(17).zfill(16).replace("0b", ""),  # Логический xor acc
-            Cmd.JMP: bin(18).zfill(16).replace("0b", ""),  # Совершить переход на pmem
-            Cmd.JZ: bin(19).zfill(16).replace("0b", ""),  # Переход на pmem при установленном zero флаге 1
-            Cmd.JZC: bin(20).zfill(16).replace("0b", ""),  # Переход на pmem при неустановленном zero флаге
-            Cmd.MULT: bin(21).zfill(16).replace("0b", ""),  # Умножить аккумулятор на знач. Из ячейки пам.
-            Cmd.DIV: bin(22).zfill(16).replace("0b", ""),  # Разделить аккумулятор на знач. Из ячейки пам.
-            Cmd.MOD: bin(23).zfill(16).replace("0b", ""),  # Остаток от деления аккумулятора на знач. Ячейки
-            Cmd.POW: bin(24).zfill(16).replace("0b", ""),  # Возвести аккумулятор в степень из ячейки пам.
-            Cmd.SQRT: bin(25).zfill(16).replace("0b", ""),  # Подсчитать корень знач. Аккумулятора
-            Cmd.IN: bin(26).zfill(16).replace("0b", ""),  # Ввод символьного значения с внешнего устройства
-            Cmd.OUT: bin(27).zfill(16).replace("0b", ""),  # Вывод символьного значения на внешнее устройство
-            Cmd.LDREF: bin(28).zfill(16).replace("0b", ""),  # Относительная загрузка из памяти
-            Cmd.SAVEREF: bin(29).zfill(16).replace("0b", ""),  # Относительное сохранение в память
-        }
+        self.logs: str = ""
 
     def gen(self, cmd: Cmd, arg: int = 0) -> int:
         instruction = ""
         assert is_bounced_16(arg), "Argument out of bounced"
-        instruction += self.cmd_codes[cmd]
+        instruction += cmd_codes[cmd]
         instruction += to_twos_complement(arg)
         self.instr_buf.append(instruction)
         index = len(self.instr_buf) - 1
-        print(index, instruction, "#", cmd.name, arg)
+        log: str = str(index) + " " + str(instruction) + " #" + str(cmd.name) + " " + str(arg)
+        print(log)
+        self.logs += log + ", "
         return index  # возвращаем индекс инструкции в буфере
+
+    def get_log(self) -> str:
+        return self.logs
 
     def change_instruction(self, index: int, cmd: Cmd, arg: int = 0) -> int:
         assert 0 <= index < len(self.instr_buf), IndexError
         assert is_bounced_16(arg), "Argument out of bounced"
         if cmd == cmd.HALT or cmd == cmd.NOP:
             arg = 0  # чтобы можно было посчитать точки выхода на этапе компиляции
-        instruction = self.cmd_codes[cmd] + to_twos_complement(arg)
+        instruction = cmd_codes[cmd] + to_twos_complement(arg)
         print(index, "change instr", index, "to", instruction, "#", cmd.name, arg)
         self.instr_buf[index] = instruction
         return len(self.instr_buf) - 1  # возвращаем индекс инструкции в буфере
@@ -293,7 +241,7 @@ class Coder:
         return self.instr_buf
 
     def check_inst_buf(self) -> bool:
-        inst_halt = self.cmd_codes[Cmd.NOP] + to_twos_complement(0)
+        inst_halt = cmd_codes[Cmd.NOP] + to_twos_complement(0)
         if self.instr_buf.count(inst_halt) == 0:
             return True
         return False

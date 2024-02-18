@@ -1,5 +1,6 @@
 import ply.yacc as yacc
-from s_lexer import tokens  # noqa: F401
+
+from .s_lexer import tokens  # noqa: F401
 
 # Грамматика
 start = "program"
@@ -8,7 +9,8 @@ precedence = (
     ("nonassoc", "LESS_THAN", "GREATER_THAN", "EQUALS", "NOT_EQUALS"),  # Non associative operators
     ("left", "PLUS", "MINUS"),
     ("left", "TIMES", "DIVIDE"),
-    ("left", "POWER", "MOD"),
+    ("left", "MOD"),
+    ("left", "POWER"),
     ("left", "SQRT")
 )
 
@@ -139,6 +141,6 @@ def parse_sovcode(src):
 
 # # Пример использования
 if __name__ == "__main__":
-    result = parse_sovcode("/home/prox/projects/ArchLab3/ArchLab3/src/examples/debug.ussr")
+    result = parse_sovcode("/src/examples/debug.ussr")
     for line in result:
         print(line)
