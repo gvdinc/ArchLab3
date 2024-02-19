@@ -47,7 +47,7 @@ tokens = [
 ]
 
 # определим регулярку для абстрактного идентификатора
-ident = r"[a-zA-Zа-яА-Я_]\w*"
+ident = r"[a-zA-Zа-яА-Я_]\w*"  # noqa: RUF001
 
 # Регулярные выражения для токенов
 t_INTEGER = r"\d+"  # noqa: N816
@@ -110,7 +110,9 @@ def t_CHAR(t):  # noqa: N802
 
 # нужен в обоих состояниях, потому что двойные кавычки матчатся и там и там.
 def t_ANY_STRING(t):  # noqa: N802
-    r"""\" """
+    # fmt: off
+    r"""\""""
+    # fmt: on
     if t.lexer.current_state() == "string":
         t.lexer.begin("INITIAL")  # переходим в начальное состояние
     else:

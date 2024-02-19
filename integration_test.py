@@ -30,7 +30,7 @@ def test_translator_and_machine(golden, caplog):
 
         # Запускаем транслятор и собираем весь стандартный вывод в переменную
         # stdout
-        with contextlib.redirect_stdout(io.StringIO()) as translator_out:
+        with contextlib.redirect_stdout(io.StringIO()):
             translator.main(source, target, byte_description)
             print("============================================================")
 
