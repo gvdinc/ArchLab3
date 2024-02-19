@@ -20,7 +20,6 @@ def test_translator_and_machine(golden, caplog):
         input_stream = os.path.join(tmpdir, "input.txt")
         target = os.path.join(tmpdir, "binary")
         byte_description = os.path.join(tmpdir, "translator.log")
-        t_out = os.path.join(tmpdir, "t_out")
         # Записываем входные данные в файлы. Данные берутся из теста.
         with open(source, "w", encoding="utf-8") as file:
             file.write(golden["in_code"])
