@@ -357,7 +357,120 @@ pass
 
 ### Сигналы
 
+Набор сигналов передаваемых из Control unit (декодера) в Data Path передаётся в виде сущности:
+```python
+class Signals:
+    def __init__(self):
+        self.arg: int = 0
+        self.latch_ar: bool = False
+        self.latch_rar: bool = False
+        self.latch_acc: bool = False
+        self.referenced: bool = False
+        self.io_out: bool = False
+        self.io_in: bool = False
+        self.write: bool = False
+        self.inst_arg: bool = False
+        self.alu_op: int
+```
+
 ![img.png](md_source/signals_table.png)
+
+## Тестирование
+
+Тестирование выполняется при помощи golden test-ов.
+
+1. Тесты реализованы в: [integration_test.py](../integration_test.py). Конфигурации:
+    - [cat.yml](../golden/cat.yml) - имитирует команду cat
+    - [hello.yml](../golden/hello.yml) - печатает hello world в stdout
+    - [hello_user_name.yml](../golden/hello_user_name.yml) - Спрашивает имя, приветствует.
+    - [math.yml](../golden/math.yml) - Показывает математические возможности языка Совкод
+    - [prob1.yml](../golden/prob1.yml) - Оптимальное решение задачи prob1
+    - [prob1s.yml](../golden/prob1s.yml) - Решение prob1 в лоб (показывает работу с циклами и условиями)
+
+Запустить тесты: `poetry run pytest . -v`
+
+Обновить конфигурацию golden tests:  `poetry run pytest . -v --update-goldens`
+
+CI при помощи Github Action:
+
+```yml
+name: Python CI
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/*"
+      - "/**"
+  pull_request:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/*"
+      - "/**"
+
+defaults:
+  run:
+    working-directory: ./
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run tests and collect coverage
+        run: |
+          poetry run coverage run -m pytest .
+          poetry run coverage report -m
+        env:
+          CI: true
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Check code formatting with Ruff
+        run: poetry run ruff format --check .
+
+      - name: Run Ruff linters
+        run: poetry run ruff check .
+```
+
+Где:
+
+- `poetry` -- управления зависимостями для языка программирования Python.
+- `coverage` -- формирование отчёта об уровне покрытия исходного кода.
+- `pytest` -- утилита для запуска тестов.
+- `ruff` -- утилита для форматирования и проверки стиля кодирования.
 
 ## Для статистики
 
