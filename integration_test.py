@@ -31,13 +31,8 @@ def test_translator_and_machine(golden, caplog):
 
         # Запускаем транслятор и собираем весь стандартный вывод в переменную
         # stdout
-        with contextlib.redirect_stdout(io.StringIO()) as ioio:
+        with contextlib.redirect_stdout(io.StringIO()):
             translator.main(source, target, byte_description)
-            text = (ioio.getvalue())
-            with open(t_out, "w", encoding="utf-8") as file:
-                file.write(text)
-                file.flush()
-                file.close()
             print("============================================================")
 
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
