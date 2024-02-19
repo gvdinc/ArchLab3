@@ -20,6 +20,7 @@ def test_translator_and_machine(golden, caplog):
         input_stream = os.path.join(tmpdir, "input.txt")
         target = os.path.join(tmpdir, "binary")
         byte_description = os.path.join(tmpdir, "translator.log")
+        t_out = os.path.join(tmpdir, "t_out")
         # Записываем входные данные в файлы. Данные берутся из теста.
         with open(source, "w", encoding="utf-8") as file:
             file.write(golden["in_code"])
@@ -30,8 +31,13 @@ def test_translator_and_machine(golden, caplog):
 
         # Запускаем транслятор и собираем весь стандартный вывод в переменную
         # stdout
-        with contextlib.redirect_stdout(io.StringIO()):
+        with contextlib.redirect_stdout(io.StringIO()) as ioio:
             translator.main(source, target, byte_description)
+            text = (ioio.getvalue())
+            with open(t_out, "w", encoding="utf-8") as file:
+                file.write(text)
+                file.flush()
+                file.close()
             print("============================================================")
 
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
