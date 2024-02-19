@@ -99,18 +99,17 @@ def is_bounced_32(num: int) -> bool:
 
 
 class MemStat:
-    data_addr_total: int = 65536  # ячеек памяти всего
-    io_addr_total: int = 8  # портов ввода/вывода всего
-    buffer_initial: int  # адрес начала буфера
-    variables_count: typing.ClassVar = {
-        ExprType.VAR_CEL.value: 0,  # 1 ячейка (4 байта)
-        ExprType.VAR_SYM.value: 0,  # 1 ячейка (4 байта)
-        ExprType.VAR_STR.value: 0,  # 256 ячеек (1060 байт)
-    }
-
     def __init__(self, sovcode_file: str = ""):
         self._var_it = 0
         self._buff_it = 0
+        self.data_addr_total: int = 65536  # ячеек памяти всего
+        self.io_addr_total: int = 8  # портов ввода/вывода всего
+        self.buffer_initial: int  # адрес начала буфера
+        self.variables_count: typing.ClassVar = {
+            ExprType.VAR_CEL.value: 0,  # 1 ячейка (4 байта)
+            ExprType.VAR_SYM.value: 0,  # 1 ячейка (4 байта)
+            ExprType.VAR_STR.value: 0,  # 256 ячеек (1060 байт)
+        }
         self._vars: typing.ClassVar = {
             # var = [addr, type] type = (int, char, str)
         }

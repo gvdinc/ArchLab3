@@ -10,3 +10,4 @@
 
 *.log
 /src/translator/out/
+/.coverage
