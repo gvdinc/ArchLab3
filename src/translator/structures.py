@@ -62,7 +62,7 @@ def to_twos_complement(num: int):
         return bin(num)[2:].zfill(bit_length).replace("0b", "")
     # Отрицательное число
     d_positive_value = abs(num) - 1
-    flipped_bits = bin(d_positive_value ^ (2 ** bit_length - 1))[2:]
+    flipped_bits = bin(d_positive_value ^ (2**bit_length - 1))[2:]
     return flipped_bits.zfill(bit_length).replace("0b", "")
 
 
@@ -105,7 +105,7 @@ class MemStat:
     variables_count: typing.ClassVar = {
         ExprType.VAR_CEL.value: 0,  # 1 ячейка (4 байта)
         ExprType.VAR_SYM.value: 0,  # 1 ячейка (4 байта)
-        ExprType.VAR_STR.value: 0  # 256 ячеек (1060 байт)
+        ExprType.VAR_STR.value: 0,  # 256 ячеек (1060 байт)
     }
 
     def __init__(self, sovcode_file: str = ""):
@@ -117,10 +117,7 @@ class MemStat:
         self._buffer: typing.ClassVar = {
             # val = [addr, type] type = (int, char, str)
         }
-        self.io_ports: typing.ClassVar = {
-            "in": 0,
-            "out": 1
-        }
+        self.io_ports: typing.ClassVar = {"in": 0, "out": 1}
 
         if sovcode_file != "":  # собираем статистику
             tokens = lexer.tokenize(sovcode_file)
@@ -134,21 +131,31 @@ class MemStat:
                 if token.type == "VAR_STR":
                     self.variables_count[ExprType.VAR_STR.value] += 1
                     continue
-            addr_count_sum = (self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.size() +
-                              self.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.size() +
-                              self.variables_count[ExprType.VAR_STR.value] * VarType.STR.size())
+            addr_count_sum = (
+                self.variables_count[ExprType.VAR_CEL.value] * VarType.INT.size()
+                + self.variables_count[ExprType.VAR_SYM.value] * VarType.CHAR.size()
+                + self.variables_count[ExprType.VAR_STR.value] * VarType.STR.size()
+            )
             self.buffer_initial = addr_count_sum + 1
             print("Кол-во переменных: ", self.variables_count)
-            print("Адресов Занято: ", addr_count_sum, "; Свободно: ", self.data_addr_total - addr_count_sum,
-                  "; Начало буфера: ", self.buffer_initial, sep="")
+            print(
+                "Адресов Занято: ",
+                addr_count_sum,
+                "; Свободно: ",
+                self.data_addr_total - addr_count_sum,
+                "; Начало буфера: ",
+                self.buffer_initial,
+                sep="",
+            )
 
     def is_initialized(self, var: str):
         return var in self._vars or var in self._buffer
 
     def allocate_var(self, var: str, var_type: VarType) -> int:
         assert len(var) > 0, "Invalid variable name"
-        assert (self._var_it + var_type.value < self.buffer_initial or
-                self._var_it + var_type.value < self.data_addr_total), "memory access out of bounds"
+        assert (
+            self._var_it + var_type.value < self.buffer_initial or self._var_it + var_type.value < self.data_addr_total
+        ), "memory access out of bounds"
         var_iter = self._var_it
         self._var_it += var_type.size()
         try:

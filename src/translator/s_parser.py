@@ -11,7 +11,7 @@ precedence = (
     ("left", "TIMES", "DIVIDE"),
     ("left", "MOD"),
     ("left", "POWER"),
-    ("left", "SQRT")
+    ("left", "SQRT"),
 )
 
 
@@ -22,7 +22,7 @@ def p_program(p):
 
 def p_statements(p):
     """statements : statements statement
-                  | statement"""
+    | statement"""
     if len(p) == 3:
         p[0] = p[1] + [p[2]]
     else:
@@ -31,28 +31,28 @@ def p_statements(p):
 
 def p_statement(p):
     """statement : assignment
-                 | if_statement
-                 | while_statement
-                 | read_statement
-                 | write_statement
-                 | expression SEMICOLON"""
+    | if_statement
+    | while_statement
+    | read_statement
+    | write_statement
+    | expression SEMICOLON"""
     p[0] = p[1]
 
 
 def p_assignment(p):
     """assignment : VAR_CEL IDENTIFIER ASSIGN expression SEMICOLON
-                  | VAR_SYM IDENTIFIER ASSIGN expression SEMICOLON
-                  | VAR_STR IDENTIFIER ASSIGN expression SEMICOLON
-                  | IDENTIFIER ASSIGN expression SEMICOLON"""
+    | VAR_SYM IDENTIFIER ASSIGN expression SEMICOLON
+    | VAR_STR IDENTIFIER ASSIGN expression SEMICOLON
+    | IDENTIFIER ASSIGN expression SEMICOLON"""
     if len(p) == 5:  # reassign
         p[0] = ("assignment", p[1], p[3])
-    elif len(p) == 6:   # assign new variable
+    elif len(p) == 6:  # assign new variable
         p[0] = ("assignment", p[1], p[2], p[4])
 
 
 def p_if_statement(p):
     """if_statement : IF LPAREN expression RPAREN LBRACE statements RBRACE
-                    | IF LPAREN expression RPAREN LBRACE statements RBRACE ELSE LBRACE statements RBRACE"""
+    | IF LPAREN expression RPAREN LBRACE statements RBRACE ELSE LBRACE statements RBRACE"""
     if len(p) == 8:
         p[0] = ("if", p[3], p[6])
     else:
@@ -76,28 +76,28 @@ def p_write_statement(p):
 
 def p_expression_binary_op(p):
     """expression : expression TIMES expression
-                  | expression DIVIDE expression
-                  | expression MOD expression
-                  | expression POWER expression
-                  | expression PLUS expression
-                  | expression MINUS expression
-                  | expression LESS_THAN expression
-                  | expression GREATER_THAN expression
-                  | expression EQUALS expression
-                  | expression NOT_EQUALS expression
-                  | expression LOGICAL_AND expression
-                  | expression LOGICAL_OR expression
-                  | expression LOGICAL_XOR expression"""
+    | expression DIVIDE expression
+    | expression MOD expression
+    | expression POWER expression
+    | expression PLUS expression
+    | expression MINUS expression
+    | expression LESS_THAN expression
+    | expression GREATER_THAN expression
+    | expression EQUALS expression
+    | expression NOT_EQUALS expression
+    | expression LOGICAL_AND expression
+    | expression LOGICAL_OR expression
+    | expression LOGICAL_XOR expression"""
     p[0] = (p[2], p[1], p[3])
 
 
 def p_expression_unary_op(p):
     """expression : SQRT expression
-                  | LOGICAL_NOT expression
-                  | BITWISE_NOT expression
-                  | MINUS expression
-                  | INCR expression
-                  | DECR expression"""
+    | LOGICAL_NOT expression
+    | BITWISE_NOT expression
+    | MINUS expression
+    | INCR expression
+    | DECR expression"""
     p[0] = (p[1], p[2])
 
 
@@ -113,8 +113,8 @@ def p_expression_identifier(p):
 
 def p_expression_literal(p):
     """expression : INTEGER
-                  | CHAR
-                  | STR"""
+    | CHAR
+    | STR"""
     p[0] = ("literal", p[1])
 
 

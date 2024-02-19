@@ -2,9 +2,7 @@ import re
 
 import ply.lex as lex
 
-states = (
-    ("string", "exclusive"),
-)
+states = (("string", "exclusive"),)
 
 # Список токенов
 tokens = [
@@ -45,7 +43,7 @@ tokens = [
     "NOT_EQUALS",
     "VAR_CEL",
     "VAR_SYM",
-    "VAR_STR"
+    "VAR_STR",
 ]
 
 # определим регулярку для абстрактного идентификатора
@@ -112,7 +110,7 @@ def t_CHAR(t):  # noqa: N802
 
 # нужен в обоих состояниях, потому что двойные кавычки матчатся и там и там.
 def t_ANY_STRING(t):  # noqa: N802
-    r"""\""""
+    r"""\" """
     if t.lexer.current_state() == "string":
         t.lexer.begin("INITIAL")  # переходим в начальное состояние
     else:

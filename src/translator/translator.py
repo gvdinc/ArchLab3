@@ -223,8 +223,7 @@ def inst_save_liter(expression: tuple) -> int:
     coder.gen(Cmd.LSL, 16)  # сдвиг старших бит в старшие разряды
     coder.gen(Cmd.LDI, lower)
     coder.gen(Cmd.SAVE, tmp_var_addr)
-    print("tmp [ val", tmp_var_addr, "=", tmp_var_val, "] saved to buffer addr", tmp_var_addr, "; expr: ",
-          expression)
+    print("tmp [ val", tmp_var_addr, "=", tmp_var_val, "] saved to buffer addr", tmp_var_addr, "; expr: ", expression)
     return tmp_var_addr
 
 
@@ -268,14 +267,14 @@ def inst_add_char_to_str_var(var_addr: int, val_addr: int) -> int:  # запис
 def inst_save_symbol(sym: str, addr: int):
     assert len(sym) == 1, ValueError
     code: int = ord(sym)
-    code_lower: int = code % (2 ** 16)
-    code_upper: int = code // (2 ** 16)
+    code_lower: int = code % (2**16)
+    code_upper: int = code // (2**16)
 
     coder.gen(Cmd.LDI, code_upper)
     coder.gen(Cmd.LSL, 16)  # верхнюю часть в старшие разряды, заодно затерли мусор
     coder.gen(Cmd.LDI, code_lower)
     coder.gen(Cmd.SAVE, addr)
-    print("op: save sym \'", sym, "\' to addr: ", addr, sep="")
+    print("op: save sym '", sym, "' to addr: ", addr, sep="")
 
 
 def inst_save_string(expression: tuple) -> int:
@@ -315,8 +314,7 @@ def inst_read(expression: tuple, port: int = default_in_port) -> int:  # ('read'
     addr = mem_stat.get_var(var) if mem_stat.is_initialized(var) else mem_stat.allocate_var(var, VarType.CHAR)
     coder.gen(Cmd.IN, port)
     coder.gen(Cmd.SAVE, addr)
-    print("op: read from port (", port, ") to var ", var, "(", addr, ")",
-          " instructions complete!\n", sep="")
+    print("op: read from port (", port, ") to var ", var, "(", addr, ")", " instructions complete!\n", sep="")
     return -1
 
 
@@ -491,8 +489,7 @@ def translate_if_expression(expression: tuple, rec_depth: int) -> int:
     translate(expression[2][0], rec_depth + 1)  # (do smth)
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход (если ложь)
-    print("if_else (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| out", out_index, "\n", sep="")
+    print("if_else (depth =", rec_depth, ") instructions complete -- ", condition, "| out", out_index, "\n", sep="")
     return -1
 
 
@@ -510,8 +507,18 @@ def translate_if_else_expression(expression: tuple, rec_depth: int) -> int:
     translate(expression[3][0], rec_depth + 1)  # (do smth2)
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JMP, out_index)
-    print("if_else (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| else", else_index, " out", out_index, "\n", sep="")
+    print(
+        "if_else (depth =",
+        rec_depth,
+        ") instructions complete -- ",
+        condition,
+        "| else",
+        else_index,
+        " out",
+        out_index,
+        "\n",
+        sep="",
+    )
     return -1
 
 
@@ -529,8 +536,18 @@ def translate_while_expression(expression: tuple, rec_depth: int) -> int:
     coder.gen(Cmd.JMP, condition_index)  # Cmd.JMP condition_index, переход на условие
     out_index = coder.get_instr_buf_size()  # получаем индекс следующей инструкции
     coder.change_instruction(promise_out_index, Cmd.JZ, out_index)  # выставляем условный переход на выход из цикла
-    print("while (depth =", rec_depth, ") instructions complete -- ",
-          condition, "| condition", condition_index, " out", out_index, "\n", sep="")
+    print(
+        "while (depth =",
+        rec_depth,
+        ") instructions complete -- ",
+        condition,
+        "| condition",
+        condition_index,
+        " out",
+        out_index,
+        "\n",
+        sep="",
+    )
     return -1
 
 

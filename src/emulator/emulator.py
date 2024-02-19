@@ -20,21 +20,33 @@ log_lvl: dict = {
     "info": logging.INFO,
     "warning": logging.WARNING,
     "error": logging.ERROR,
-    "critical": logging.CRITICAL
+    "critical": logging.CRITICAL,
 }
 
 group_no_signal_cmds: list[Command.value] = [
-    Command.LDM.value, Command.ADD.value, Command.SUB.value, Command.INCR.value, Command.DECR.value,
-    Command.LSL.value, Command.LSR.value, Command.AND.value, Command.OR.value, Command.NOT.value,
-    Command.XOR.value, Command.MULT.value, Command.DIV.value, Command.MOD.value, Command.POW.value,
-    Command.SQRT.value
+    Command.LDM.value,
+    Command.ADD.value,
+    Command.SUB.value,
+    Command.INCR.value,
+    Command.DECR.value,
+    Command.LSL.value,
+    Command.LSR.value,
+    Command.AND.value,
+    Command.OR.value,
+    Command.NOT.value,
+    Command.XOR.value,
+    Command.MULT.value,
+    Command.DIV.value,
+    Command.MOD.value,
+    Command.POW.value,
+    Command.SQRT.value,
 ]
 
 
 def big_endian_split(value: int) -> tuple[int, int]:
     """Раскладывает число на его младшую и старшую составляющую"""
-    high = value // (2 ** argument_size)
-    low = value % (2 ** argument_size)
+    high = value // (2**argument_size)
+    low = value % (2**argument_size)
     return high, low
 
 
@@ -68,7 +80,7 @@ class Signals:
         self.latch_acc = True
 
     def check_runnable(self) -> bool:
-        check_arg: bool = 0 <= self.arg <= 2 ** argument_size
+        check_arg: bool = 0 <= self.arg <= 2**argument_size
         check_cmd: bool = 2 <= self.alu_op <= Command.SAVEREF.value
         assert check_cmd, "Wrong alu_op code"
         if not check_arg:
@@ -78,7 +90,7 @@ class Signals:
 
 
 def from_twos_complement(value2c: int) -> int:
-    assert 0 <= value2c < 2 ** machine_word_size, ValueError
+    assert 0 <= value2c < 2**machine_word_size, ValueError
     val = value2c
     if val & (1 << (machine_word_size - 1)):
         # Если старший бит установлен (число отрицательное)
@@ -90,8 +102,8 @@ class DataPass:
     def __init__(self, inputs: list[int]):
         # буфер вывода (сюда складываем значения из порта вывода) это порт ввода
         # память
-        self.io_ports: list[list[int]] = [[] * 1 for i in range(port_number)]
-        self.data_mem: list[int] = [0] * 2 ** argument_size
+        self.io_ports: list[list[int]] = [[] * 1 for _ in range(port_number)]
+        self.data_mem: list[int] = [0] * 2**argument_size
         self.io_ports[in_port] = inputs
         # регистры
         self.ar: int = 0  # address register 16 bit
@@ -122,12 +134,12 @@ class DataPass:
             self.c = True
 
     def _bounce_res(self, result: int) -> int:
-        if result > 2 ** machine_word_size:
+        if result > 2**machine_word_size:
             self.c = True
-            return result % (2 ** machine_word_size)
-        if result < -(2 ** machine_word_size):
+            return result % (2**machine_word_size)
+        if result < -(2**machine_word_size):
             self.c = True
-            return (result + 2 ** machine_word_size) % (2 ** machine_word_size)
+            return (result + 2**machine_word_size) % (2**machine_word_size)
         return result
 
     def _to_twos_complement(self, int_value: int) -> int:
@@ -138,7 +150,7 @@ class DataPass:
             return value  # in two's complement already
         # переводим в дополнительный код (val < 0)
         d_positive_value: int = abs(value) - 1
-        flipped_bits: str = bin(d_positive_value ^ (2 ** machine_word_size - 1))[2:]
+        flipped_bits: str = bin(d_positive_value ^ (2**machine_word_size - 1))[2:]
         string_complement: str = flipped_bits.zfill(machine_word_size)
         assert string_complement[0] == "1", ValueError
         return int(string_complement, 2)
@@ -149,7 +161,7 @@ class DataPass:
         if alu_op == Command.LDM.value:
             return data
         if alu_op == Command.LDI.value:
-            return big_endian_split(self.acc)[0] * (2 ** argument_size) + mux_res  # works great if latch_rar
+            return big_endian_split(self.acc)[0] * (2**argument_size) + mux_res  # works great if latch_rar
         if alu_op == Command.SAVE.value:
             return data
         if alu_op == Command.ADD.value:
@@ -193,7 +205,7 @@ class DataPass:
         if alu_op == Command.MOD.value:
             return val_mux % val_data
         if alu_op == Command.POW.value:
-            return val_mux ** val_data
+            return val_mux**val_data
         if alu_op == Command.SQRT.value:
             return int(math.sqrt(val_mux))
         if alu_op == Command.IN.value:
@@ -223,7 +235,7 @@ class DataPass:
 
 class ControlUnit:
     def __init__(self, instructions: list[int], data_pass: DataPass):
-        self.inst_mem: list[int] = [0] * 2 ** argument_size
+        self.inst_mem: list[int] = [0] * 2**argument_size
         self.pc: int = 0
         self.data_path: DataPass = data_pass
         self._tick = 0
@@ -266,8 +278,11 @@ class ControlUnit:
             # jump-ы 1 такт
             self.signals.dp_pause()
 
-            if opcode is Command.JMP.value or (opcode is Command.JZ.value and self.data_path.z) or (
-                    opcode is Command.JZC.value and (self.data_path.z or self.data_path.c)):
+            if (
+                opcode is Command.JMP.value
+                or (opcode is Command.JZ.value and self.data_path.z)
+                or (opcode is Command.JZC.value and (self.data_path.z or self.data_path.c))
+            ):
                 self.signal_sel_next(False)
             else:
                 self.signal_sel_next(True)
@@ -278,16 +293,16 @@ class ControlUnit:
 
     def decode_and_execute_instruction(self) -> None:  # noqa: C901
         """Основной цикл процессора. Эмулирует Instruction Decoder.
-                Обработка инструкции:
-                0. Получаем инструкцию из памяти инструкций
-                1. Проверить `Opcode`.
-                2. Вызвать методы, имитирующие необходимые управляющие сигналы.
-                3. Продвинуть модельное время вперёд на один такт (`tick`).
-                   В этот момент прокручивается data_path
-                4. (если необходимо) повторить шаги 2-3.
-                5. Перейти к следующей инструкции.
-                Обработка функций управления потоком исполнения вынесена в
-                `decode_and_execute_control_flow_instruction`.
+        Обработка инструкции:
+        0. Получаем инструкцию из памяти инструкций
+        1. Проверить `Opcode`.
+        2. Вызвать методы, имитирующие необходимые управляющие сигналы.
+        3. Продвинуть модельное время вперёд на один такт (`tick`).
+           В этот момент прокручивается data_path
+        4. (если необходимо) повторить шаги 2-3.
+        5. Перейти к следующей инструкции.
+        Обработка функций управления потоком исполнения вынесена в
+        `decode_and_execute_control_flow_instruction`.
         """
         global int_output
         instr: int = self.inst_mem[self.pc]
@@ -394,14 +409,16 @@ def read_instructions(binary_file: str) -> list[int]:
         four_bytes_cell: list = list(file.read(4))  # Читаем первые 4 байта из файла (32бит = 4байт)
         i: int = 0  # Проходим в цикле, чтобы считать оставшуюся часть файла
         while four_bytes_cell:
-            assert len(four_bytes_cell) == 4, ("Wrong inst " + str(i) + " byte size " +
-                                               str(len(four_bytes_cell)) + ", while 4 expected")
-            instruction: int = 2 ** 16 * (2 ** 8 * four_bytes_cell[0] + four_bytes_cell[1]) + (
-                    2 ** 8 * four_bytes_cell[2] + four_bytes_cell[3])
+            assert len(four_bytes_cell) == 4, (
+                "Wrong inst " + str(i) + " byte size " + str(len(four_bytes_cell)) + ", while 4 expected"
+            )
+            instruction: int = 2**16 * (2**8 * four_bytes_cell[0] + four_bytes_cell[1]) + (
+                2**8 * four_bytes_cell[2] + four_bytes_cell[3]
+            )
             instructions.append(instruction)
             i += 1
             four_bytes_cell: list = list(file.read(4))  # чтение (байт)
-        assert len(instructions) != 0, ("Empty file " + binary_file)
+        assert len(instructions) != 0, "Empty file " + binary_file
         return instructions
 
 
@@ -441,15 +458,16 @@ def main(binary_file: str, inputs_file: str):
 
 if __name__ == "__main__":
     logging_lvl: int = logging.DEBUG
-    assert (len(sys.argv) == 3 or
-            (len(sys.argv) == 4 and sys.argv[3].lower() in log_lvl)), ("Wrong arguments: python3 sovcode.py <code_file>"
-                                                                       " <input_file> <debug_lvl>")
+    assert len(sys.argv) == 3 or (len(sys.argv) == 4 and sys.argv[3].lower() in log_lvl), (
+        "Wrong arguments: python3 sovcode.py <code_file>" " <input_file> <debug_lvl>"
+    )
     if len(sys.argv) == 4:  # set logging lvl
         _, code_file, input_file, log_lvl_arg = sys.argv
         logging_lvl = log_lvl[str(log_lvl_arg).lower()]
     else:
         _, code_file, input_file = sys.argv
 
-    logging.basicConfig(level=logging_lvl, filename="run_log.log", filemode="w",
-                        format="%(levelname)s [%(funcName)s]: %(message)s")
+    logging.basicConfig(
+        level=logging_lvl, filename="run_log.log", filemode="w", format="%(levelname)s [%(funcName)s]: %(message)s"
+    )
     main(code_file, input_file)
