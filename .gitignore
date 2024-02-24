@@ -7,6 +7,8 @@
 /src/translator/parsetab.py
 /src/tmpdir/*
 /out/
+/src/translator/out/
+/src/emulator/out/
 
 *.log
 /src/translator/out/
